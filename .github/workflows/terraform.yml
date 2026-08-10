@@ -1,0 +1,174 @@
+name: Terraform
+
+on:
+  pull_request:
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+
+env:
+  TF_VERSION: "1.7.5"
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  # ==========================================================================
+  # PR -> `terraform plan` for every environment, posted as a PR comment.
+  # Runs read-only (no state mutation), so no locking concerns here.
+  # ==========================================================================
+  plan:
+    if: github.event_name == 'pull_request'
+    name: plan (${{ matrix.environment }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+    defaults:
+      run:
+        working-directory: terraform/environments/${{ matrix.environment }}
+
+    steps:
+      - name: Checkout app repo
+        uses: actions/checkout@v4
+        with:
+          path: leadspot
+
+      # Sibling checkout so the local backend's relative path
+      # (../../../../leadspot-terraform-state/<env>/terraform.tfstate)
+      # resolves exactly like it does locally. See terraform/README.md.
+      - name: Checkout Terraform state repo (read-only for plan)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.TF_STATE_REPO }}
+          token: ${{ secrets.TF_STATE_REPO_TOKEN }}
+          path: leadspot-terraform-state
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: leadspot/terraform/environments/${{ matrix.environment }}
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        working-directory: leadspot/terraform/environments/${{ matrix.environment }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: leadspot/terraform/environments/${{ matrix.environment }}
+        run: terraform plan -no-color -input=false -out=tfplan 2>&1 | tee plan-output.txt
+        env:
+          TF_VAR_vercel_api_token: ${{ secrets[format('{0}_VERCEL_API_TOKEN', matrix.environment)] }}
+          TF_VAR_vercel_team_id: ${{ vars.VERCEL_TEAM_ID }}
+          TF_VAR_upstash_email: ${{ secrets.UPSTASH_EMAIL }}
+          TF_VAR_upstash_api_key: ${{ secrets.UPSTASH_API_KEY }}
+          TF_VAR_git_repository: ${{ github.repository }}
+          TF_VAR_supabase_url: ${{ secrets[format('{0}_SUPABASE_URL', matrix.environment)] }}
+          TF_VAR_supabase_anon_key: ${{ secrets[format('{0}_SUPABASE_ANON_KEY', matrix.environment)] }}
+          TF_VAR_supabase_service_role_key: ${{ secrets[format('{0}_SUPABASE_SERVICE_ROLE_KEY', matrix.environment)] }}
+          TF_VAR_geoapify_api_key: ${{ secrets[format('{0}_GEOAPIFY_API_KEY', matrix.environment)] }}
+          TF_VAR_resend_api_key: ${{ secrets[format('{0}_RESEND_API_KEY', matrix.environment)] }}
+          TF_VAR_map_tiles_api_key: ${{ secrets[format('{0}_MAP_TILES_API_KEY', matrix.environment)] }}
+          TF_VAR_qstash_token: ${{ secrets[format('{0}_QSTASH_TOKEN', matrix.environment)] }}
+          TF_VAR_qstash_current_signing_key: ${{ secrets[format('{0}_QSTASH_CURRENT_SIGNING_KEY', matrix.environment)] }}
+          TF_VAR_qstash_next_signing_key: ${{ secrets[format('{0}_QSTASH_NEXT_SIGNING_KEY', matrix.environment)] }}
+
+      - name: Comment plan on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'leadspot/terraform/environments/${{ matrix.environment }}/plan-output.txt';
+            let output = fs.readFileSync(path, 'utf8');
+            if (output.length > 60000) output = output.slice(0, 60000) + '\n... (tronqué)';
+
+            const body = [
+              `#### Terraform Plan — \`${{ matrix.environment }}\``,
+              '```',
+              output,
+              '```',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+
+  # ==========================================================================
+  # Merge to main -> `terraform apply` on prod only.
+  # `concurrency` prevents two prod applies from ever running at once from
+  # CI (does not protect against a concurrent manual local apply — see the
+  # manual-locking convention in terraform/README.md).
+  # ==========================================================================
+  apply-prod:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    name: apply (prod)
+    runs-on: ubuntu-latest
+    concurrency:
+      group: terraform-apply-prod
+      cancel-in-progress: false
+    environment: prod
+
+    steps:
+      - name: Checkout app repo
+        uses: actions/checkout@v4
+        with:
+          path: leadspot
+
+      - name: Checkout Terraform state repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.TF_STATE_REPO }}
+          token: ${{ secrets.TF_STATE_REPO_TOKEN }}
+          path: leadspot-terraform-state
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: leadspot/terraform/environments/prod
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        working-directory: leadspot/terraform/environments/prod
+        run: terraform apply -auto-approve -input=false
+        env:
+          TF_VAR_vercel_api_token: ${{ secrets.PROD_VERCEL_API_TOKEN }}
+          TF_VAR_vercel_team_id: ${{ vars.VERCEL_TEAM_ID }}
+          TF_VAR_upstash_email: ${{ secrets.UPSTASH_EMAIL }}
+          TF_VAR_upstash_api_key: ${{ secrets.UPSTASH_API_KEY }}
+          TF_VAR_git_repository: ${{ github.repository }}
+          TF_VAR_supabase_url: ${{ secrets.PROD_SUPABASE_URL }}
+          TF_VAR_supabase_anon_key: ${{ secrets.PROD_SUPABASE_ANON_KEY }}
+          TF_VAR_supabase_service_role_key: ${{ secrets.PROD_SUPABASE_SERVICE_ROLE_KEY }}
+          TF_VAR_geoapify_api_key: ${{ secrets.PROD_GEOAPIFY_API_KEY }}
+          TF_VAR_resend_api_key: ${{ secrets.PROD_RESEND_API_KEY }}
+          TF_VAR_map_tiles_api_key: ${{ secrets.PROD_MAP_TILES_API_KEY }}
+          TF_VAR_qstash_token: ${{ secrets.PROD_QSTASH_TOKEN }}
+          TF_VAR_qstash_current_signing_key: ${{ secrets.PROD_QSTASH_CURRENT_SIGNING_KEY }}
+          TF_VAR_qstash_next_signing_key: ${{ secrets.PROD_QSTASH_NEXT_SIGNING_KEY }}
+
+      # The local backend wrote the updated state file straight into the
+      # sibling `leadspot-terraform-state` checkout — commit + push it so
+      # the next plan/apply (local or CI) starts from current state.
+      - name: Commit & push updated state
+        working-directory: leadspot-terraform-state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add prod/terraform.tfstate
+          if ! git diff --cached --quiet; then
+            git commit -m "prod: terraform apply from ${{ github.sha }}"
+            git push
+          else
+            echo "No state changes to commit."
+          fi

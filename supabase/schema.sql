@@ -1,0 +1,209 @@
+-- ============================================================================
+-- LeadSpot — Supabase (Postgres) schema
+-- Run this in the Supabase SQL editor, or via `supabase db push` / migrations.
+-- ============================================================================
+
+-- Extensions ------------------------------------------------------------
+create extension if not exists "pgcrypto"; -- gen_random_uuid()
+
+-- ============================================================================
+-- profiles — 1:1 with auth.users, created automatically on signup
+-- ============================================================================
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  email text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
+create policy "profiles_select_own" on public.profiles
+  for select using (auth.uid() = id);
+
+create policy "profiles_update_own" on public.profiles
+  for update using (auth.uid() = id);
+
+-- Auto-create a profile row whenever a new auth user is created.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email)
+  values (new.id, new.email)
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- ============================================================================
+-- leads — establishments discovered via Geoapify that have no real website
+-- ============================================================================
+create type public.lead_status as enum (
+  'nouveau',
+  'contacte',
+  'interesse',
+  'converti',
+  'pas_interesse'
+);
+
+create table if not exists public.leads (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+
+  -- Geoapify place identity
+  place_id text not null,
+  name text not null,
+  category text not null,
+  address text,
+  lat double precision,
+  lon double precision,
+  phone text,
+  email text,
+  siret text, -- French business registration number, when present in OSM data
+  website text, -- null, or a facebook.com/instagram.com only link
+
+  -- search context this lead was found under (used for cache key + rescans)
+  search_category text not null,
+  search_zone text not null, -- free-form label (city name or "lat,lon")
+  search_radius_km numeric not null,
+
+  status public.lead_status not null default 'nouveau',
+  notes text,
+
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  unique (user_id, place_id)
+);
+
+create index if not exists leads_user_id_idx on public.leads (user_id);
+create index if not exists leads_status_idx on public.leads (user_id, status);
+create index if not exists leads_search_idx on public.leads (user_id, search_category, search_zone);
+
+-- Safe to re-run against a database created before these columns existed: a
+-- no-op on fresh installs (already in the CREATE TABLE above).
+alter table public.leads add column if not exists email text;
+alter table public.leads add column if not exists siret text;
+
+alter table public.leads enable row level security;
+
+create policy "leads_select_own" on public.leads
+  for select using (auth.uid() = user_id);
+
+create policy "leads_insert_own" on public.leads
+  for insert with check (auth.uid() = user_id);
+
+create policy "leads_update_own" on public.leads
+  for update using (auth.uid() = user_id);
+
+create policy "leads_delete_own" on public.leads
+  for delete using (auth.uid() = user_id);
+
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists leads_set_updated_at on public.leads;
+create trigger leads_set_updated_at
+  before update on public.leads
+  for each row execute procedure public.set_updated_at();
+
+-- ============================================================================
+-- saved_zones — zones a user wants to be re-scanned weekly (alerts)
+-- ============================================================================
+create table if not exists public.saved_zones (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  category text not null,
+  zone_label text not null,   -- e.g. "Lyon" or "Lyon (45.75,4.85)"
+  lat double precision not null,
+  lon double precision not null,
+  radius_km numeric not null,
+  alerts_enabled boolean not null default true,
+  last_scanned_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists saved_zones_user_id_idx on public.saved_zones (user_id);
+create index if not exists saved_zones_alerts_idx on public.saved_zones (alerts_enabled);
+
+alter table public.saved_zones enable row level security;
+
+create policy "saved_zones_select_own" on public.saved_zones
+  for select using (auth.uid() = user_id);
+
+create policy "saved_zones_insert_own" on public.saved_zones
+  for insert with check (auth.uid() = user_id);
+
+create policy "saved_zones_update_own" on public.saved_zones
+  for update using (auth.uid() = user_id);
+
+create policy "saved_zones_delete_own" on public.saved_zones
+  for delete using (auth.uid() = user_id);
+
+-- ============================================================================
+-- usage — one row per user per calendar month, counts searches
+-- ============================================================================
+create table if not exists public.usage (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  period text not null, -- 'YYYY-MM'
+  search_count integer not null default 0,
+  updated_at timestamptz not null default now(),
+  unique (user_id, period)
+);
+
+alter table public.usage enable row level security;
+
+create policy "usage_select_own" on public.usage
+  for select using (auth.uid() = user_id);
+
+-- Inserts/updates to usage are done via the service-role key from API routes
+-- only (server-side quota enforcement), so no insert/update policy is granted
+-- to authenticated users here.
+
+-- Atomically increment (or create) the usage counter for a user/period and
+-- return the new count. Called from the server with the service role key.
+create or replace function public.increment_usage(p_user_id uuid, p_period text)
+returns integer
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_count integer;
+begin
+  insert into public.usage (user_id, period, search_count)
+  values (p_user_id, p_period, 1)
+  on conflict (user_id, period)
+  do update set search_count = public.usage.search_count + 1,
+                updated_at = now()
+  returning search_count into v_count;
+
+  return v_count;
+end;
+$$;
+
+-- ============================================================================
+-- keepalive_pings — trivial table hit by /api/keepalive to keep the Supabase
+-- free-tier project from being auto-paused after ~7 days of inactivity.
+-- ============================================================================
+create table if not exists public.keepalive_pings (
+  id boolean primary key default true,
+  pinged_at timestamptz not null default now(),
+  constraint keepalive_singleton check (id)
+);
+
+insert into public.keepalive_pings (id, pinged_at)
+values (true, now())
+on conflict (id) do update set pinged_at = excluded.pinged_at;

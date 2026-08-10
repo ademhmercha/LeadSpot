@@ -1,0 +1,22 @@
+# Copy to terraform.tfvars (gitignored) and fill in real values locally.
+# In CI, these are injected via GitHub Actions Secrets instead — see
+# ../../../.github/workflows/terraform.yml and ../../README.md.
+
+vercel_api_token = ""
+vercel_team_id   = null
+upstash_email    = ""
+upstash_api_key  = ""
+
+git_repository = "your-github-username/leadspot"
+
+supabase_url               = ""
+supabase_anon_key          = ""
+supabase_service_role_key  = ""
+geoapify_api_key           = ""
+resend_api_key             = ""
+map_tiles_api_key          = ""
+qstash_token                = ""
+qstash_current_signing_key  = ""
+qstash_next_signing_key     = ""
+
+free_tier_monthly_search_limit = 10
