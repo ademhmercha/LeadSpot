@@ -25,8 +25,15 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur dark:border-gray-800 dark:bg-gray-900/90">
       <div className="safe-top mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/dashboard" className="text-base font-bold text-brand-700 sm:text-lg dark:text-brand-400">
-          LeadSpot
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <img
+            src="/icons/logo-small.png"
+            alt="Logo LeadSpot"
+            width={28}
+            height={28}
+            className="h-7 w-7 rounded-md"
+          />
+          <span className="text-base font-bold text-brand-700 sm:text-lg dark:text-brand-400">LeadSpot</span>
         </Link>
         <div className="flex items-center gap-0.5 sm:gap-1">
           {LINKS.map((link) => (

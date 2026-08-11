@@ -34,7 +34,14 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-brand-700 dark:text-brand-400">LeadSpot</h1>
+        <img
+          src="/icons/logo-small.png"
+          alt="Logo LeadSpot"
+          width={48}
+          height={48}
+          className="mx-auto h-12 w-12 rounded-xl"
+        />
+        <h1 className="mt-2 text-2xl font-bold text-brand-700 dark:text-brand-400">LeadSpot</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Connectez-vous à votre compte</p>
       </div>
 
