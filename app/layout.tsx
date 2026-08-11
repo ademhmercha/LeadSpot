@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "LeadSpot",
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
   icons: {
     icon: "/icons/icon-192.png",
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
