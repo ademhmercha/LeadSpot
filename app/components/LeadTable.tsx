@@ -8,6 +8,10 @@ import ContactLinks from "./ContactLinks";
 
 type SortKey = "created_at" | "name" | "status";
 
+function contactCount(lead: Lead): number {
+  return [lead.phone, lead.email].filter(Boolean).length;
+}
+
 interface LeadTableProps {
   leads: Lead[];
   onLeadUpdated: (lead: Lead) => void;
@@ -21,6 +25,8 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+
+  const withContacts = useMemo(() => leads.filter((l) => l.phone || l.email).length, [leads]);
 
   const filtered = useMemo(() => {
     let rows = leads;
@@ -94,15 +100,20 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
           </div>
         </div>
 
-        <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-gray-600">
-          <input
-            type="checkbox"
-            checked={contactOnly}
-            onChange={(e) => setContactOnly(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-brand-600 transition-colors focus:ring-brand-500"
-          />
-          Coordonnées disponibles uniquement (téléphone ou email)
-        </label>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={contactOnly}
+              onChange={(e) => setContactOnly(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-brand-600 transition-colors focus:ring-brand-500"
+            />
+            Coordonnées disponibles uniquement (téléphone ou email)
+          </label>
+          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+            {withContacts} / {leads.length} avec coordonnées
+          </span>
+        </div>
       </div>
 
       <ul className="divide-y divide-gray-100">
@@ -116,7 +127,14 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <p className="font-medium text-gray-800">{lead.name}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium text-gray-800">{lead.name}</p>
+                  {contactCount(lead) > 0 && (
+                    <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                      {contactCount(lead)} coordonnée{contactCount(lead) > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-gray-500">{lead.address}</p>
                 <ContactLinks
                   phone={lead.phone}
