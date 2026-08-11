@@ -65,21 +65,21 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
   }
 
   return (
-    <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-200">
-      <div className="flex flex-col gap-3 border-b border-gray-100 p-4">
+    <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+      <div className="flex flex-col gap-3 border-b border-gray-100 p-4 dark:border-gray-800">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <input
             type="text"
             placeholder="Rechercher un nom ou une adresse..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:w-64"
+            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:w-64 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
           <div className="flex gap-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as LeadStatus | "all")}
-              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="all">Tous les statuts</option>
               {LEAD_STATUSES.map((s) => (
@@ -91,7 +91,7 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
             <select
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
-              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="created_at">Plus récents</option>
               <option value="name">Nom (A-Z)</option>
@@ -101,7 +101,7 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-gray-600">
+          <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
             <input
               type="checkbox"
               checked={contactOnly}
@@ -110,14 +110,16 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
             />
             Coordonnées disponibles uniquement (téléphone ou email)
           </label>
-          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
             {withContacts} / {leads.length} avec coordonnées
           </span>
         </div>
       </div>
 
-      <ul className="divide-y divide-gray-100">
-        {filtered.length === 0 && <li className="p-6 text-center text-sm text-gray-400">Aucun lead à afficher.</li>}
+      <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+        {filtered.length === 0 && (
+          <li className="p-6 text-center text-sm text-gray-400 dark:text-gray-500">Aucun lead à afficher.</li>
+        )}
 
         {filtered.map((lead, i) => (
           <li
@@ -128,14 +130,14 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium text-gray-800">{lead.name}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-100">{lead.name}</p>
                   {contactCount(lead) > 0 && (
-                    <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                    <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                       {contactCount(lead)} coordonnée{contactCount(lead) > 1 ? "s" : ""}
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-500">{lead.address}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{lead.address}</p>
                 <ContactLinks
                   phone={lead.phone}
                   email={lead.email}
@@ -151,7 +153,7 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
                   value={lead.status}
                   disabled={savingId === lead.id}
                   onChange={(e) => updateLead(lead.id, { status: e.target.value as LeadStatus })}
-                  className="rounded-lg border border-gray-300 px-2 py-1 text-xs transition-colors"
+                  className="rounded-lg border border-gray-300 px-2 py-1 text-xs transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 >
                   {LEAD_STATUSES.map((s) => (
                     <option key={s} value={s}>
@@ -163,11 +165,11 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
               </div>
             </div>
 
-            <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
+            <div className="mt-2 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
               <span>Recherché sur : {lead.search_zone}</span>
               <button
                 onClick={() => setExpandedId(expandedId === lead.id ? null : lead.id)}
-                className="font-medium text-brand-600 transition-colors hover:underline"
+                className="font-medium text-brand-600 transition-colors hover:underline dark:text-brand-400"
               >
                 {expandedId === lead.id ? "Masquer les détails" : "Détails / contact"}
               </button>
@@ -183,7 +185,7 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
               <div className="animate-fade-in-up mt-2 space-y-2">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">
+                    <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
                       Téléphone {!lead.phone && "(non trouvé — complétez si connu)"}
                     </label>
                     <input
@@ -193,11 +195,11 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
                       onBlur={(e) => {
                         if (e.target.value.trim() !== (lead.phone ?? "")) updateLead(lead.id, { phone: e.target.value });
                       }}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-500">
+                    <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
                       Email {!lead.email && "(non trouvé — complétez si connu)"}
                     </label>
                     <input
@@ -207,7 +209,7 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
                       onBlur={(e) => {
                         if (e.target.value.trim() !== (lead.email ?? "")) updateLead(lead.id, { email: e.target.value });
                       }}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                     />
                   </div>
                 </div>
@@ -215,7 +217,7 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
                   defaultValue={lead.notes ?? ""}
                   placeholder="Notes libres..."
                   onBlur={(e) => updateLead(lead.id, { notes: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                   rows={2}
                 />
               </div>

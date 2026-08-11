@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import PwaRegister from "./components/PwaRegister";
 
@@ -34,6 +35,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body className="min-h-screen">
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`(function () {
+            try {
+              var stored = localStorage.getItem("leadspot-theme");
+              var dark = stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+              if (dark) document.documentElement.classList.add("dark");
+            } catch (e) {}
+          })();`}
+        </Script>
         {children}
         <PwaRegister />
       </body>

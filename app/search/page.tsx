@@ -16,8 +16,8 @@ export default async function SearchPage() {
     <div className="min-h-screen">
       <Navbar />
       <main className="mx-auto max-w-xl px-4 py-6">
-        <h1 className="mb-1 text-xl font-bold text-gray-800">Rechercher des leads</h1>
-        <p className="mb-4 text-sm text-gray-500">
+        <h1 className="mb-1 text-xl font-bold text-gray-800 dark:text-gray-100">Rechercher des leads</h1>
+        <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
           Trouvez les établissements locaux sans site web (ou avec seulement une page Facebook/Instagram).
         </p>
         <div className="mb-4">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import ThemeToggle from "./ThemeToggle";
 
 const LINKS = [
   { href: "/search", label: "Rechercher", short: "Chercher" },
@@ -22,9 +23,9 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur">
+    <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur dark:border-gray-800 dark:bg-gray-900/90">
       <div className="safe-top mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/dashboard" className="text-base font-bold text-brand-700 sm:text-lg">
+        <Link href="/dashboard" className="text-base font-bold text-brand-700 sm:text-lg dark:text-brand-400">
           LeadSpot
         </Link>
         <div className="flex items-center gap-0.5 sm:gap-1">
@@ -33,17 +34,20 @@ export default function Navbar() {
               key={link.href}
               href={link.href}
               className={`rounded-lg px-2 py-1.5 text-sm font-medium transition sm:px-3 ${
-                pathname.startsWith(link.href) ? "bg-brand-50 text-brand-700" : "text-gray-600 hover:bg-gray-100"
+                pathname.startsWith(link.href)
+                  ? "bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300"
+                  : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
               }`}
             >
               <span className="sm:hidden">{link.short}</span>
               <span className="hidden sm:inline">{link.label}</span>
             </Link>
           ))}
+          <ThemeToggle />
           <button
             onClick={handleLogout}
             title="Se déconnecter"
-            className="ml-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 sm:ml-2 sm:px-3"
+            className="ml-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 sm:ml-2 sm:px-3 dark:text-gray-400 dark:hover:bg-gray-800"
           >
             <span className="hidden sm:inline">Déconnexion</span>
             <svg

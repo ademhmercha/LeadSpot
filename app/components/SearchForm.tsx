@@ -10,7 +10,9 @@ import ContactLinks from "./ContactLinks";
 const MapView = dynamic(() => import("./MapView"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center text-sm text-gray-400">Chargement de la carte...</div>
+    <div className="flex h-full items-center justify-center text-sm text-gray-400 dark:text-gray-500">
+      Chargement de la carte...
+    </div>
   ),
 });
 
@@ -132,13 +134,18 @@ export default function SearchForm() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800"
+      >
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Type d&apos;établissement</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Type d&apos;établissement
+          </label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           >
             {BUSINESS_CATEGORIES.map((c) => (
               <option key={c.value} value={c.value}>
@@ -149,13 +156,15 @@ export default function SearchForm() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Zone de recherche</label>
-          <div className="mb-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-100 p-1">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Zone de recherche</label>
+          <div className="mb-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
             <button
               type="button"
               onClick={() => selectMode("ville")}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-150 ${
-                zoneMode === "ville" ? "bg-white text-brand-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                zoneMode === "ville"
+                  ? "bg-white text-brand-700 shadow-sm dark:bg-gray-600 dark:text-brand-300"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               }`}
             >
               Ville
@@ -164,7 +173,9 @@ export default function SearchForm() {
               type="button"
               onClick={() => selectMode("gps")}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-150 ${
-                zoneMode === "gps" ? "bg-white text-brand-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                zoneMode === "gps"
+                  ? "bg-white text-brand-700 shadow-sm dark:bg-gray-600 dark:text-brand-300"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               }`}
             >
               Autour de moi
@@ -178,7 +189,7 @@ export default function SearchForm() {
               placeholder="ex : Lyon, France"
               value={zoneQuery}
               onChange={(e) => setZoneQuery(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             />
           ) : (
             <div className="animate-fade-in-up">
@@ -186,7 +197,7 @@ export default function SearchForm() {
                 type="button"
                 onClick={handleLocateMe}
                 disabled={locating}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-all duration-150 hover:border-brand-300 hover:bg-brand-50 disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-all duration-150 hover:border-brand-300 hover:bg-brand-50 disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:border-brand-400 dark:hover:bg-brand-900/30"
               >
                 <svg viewBox="0 0 20 20" fill="currentColor" className={`h-4 w-4 ${locating ? "animate-pulse" : ""}`}>
                   <path
@@ -197,9 +208,11 @@ export default function SearchForm() {
                 </svg>
                 {locating ? "Localisation en cours..." : gpsCoords ? "Position détectée ✓ — relocaliser" : "Me localiser"}
               </button>
-              {locateError && <p className="mt-1.5 text-xs text-red-600">{locateError}</p>}
+              {locateError && (
+                <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{locateError}</p>
+              )}
               {gpsCoords && !locateError && (
-                <p className="mt-1.5 text-xs text-green-700">
+                <p className="mt-1.5 text-xs text-green-700 dark:text-green-400">
                   Position : {gpsCoords.lat.toFixed(4)}, {gpsCoords.lon.toFixed(4)}
                 </p>
               )}
@@ -208,7 +221,9 @@ export default function SearchForm() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Rayon : {radiusKm} km</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Rayon : {radiusKm} km
+          </label>
           <input
             type="range"
             min={bounds.min}
@@ -217,13 +232,13 @@ export default function SearchForm() {
             onChange={(e) => setRadiusKm(Number(e.target.value))}
             className="w-full accent-brand-600 transition-opacity"
           />
-          <div className="flex justify-between text-xs text-gray-400">
+          <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
             <span>{bounds.min} km</span>
             <span>{bounds.max} km</span>
           </div>
         </div>
 
-        {error && <p className="animate-fade-in-up text-sm text-red-600">{error}</p>}
+        {error && <p className="animate-fade-in-up text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         <button
           type="submit"
@@ -236,11 +251,11 @@ export default function SearchForm() {
 
       {result && (
         <div className="animate-fade-in-up space-y-4">
-          <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
-            <h3 className="font-semibold text-gray-800">
+          <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+            <h3 className="font-semibold text-gray-800 dark:text-gray-100">
               {result.withoutWebsiteCount} établissement(s) sans site web trouvé(s)
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Sur {result.totalFound} établissement(s) dans un rayon de {radiusKm} km autour de{" "}
               <strong>{result.zoneLabel}</strong>
               {result.fromCache && " (résultats en cache, < 7 jours)"}.
@@ -250,7 +265,7 @@ export default function SearchForm() {
               <button
                 onClick={handleSaveZone}
                 disabled={savingZone || zoneSaved}
-                className="rounded-lg border border-brand-300 px-3 py-1.5 text-sm font-medium text-brand-700 transition-all duration-150 hover:bg-brand-50 disabled:opacity-60"
+                className="rounded-lg border border-brand-300 px-3 py-1.5 text-sm font-medium text-brand-700 transition-all duration-150 hover:bg-brand-50 disabled:opacity-60 dark:border-brand-500 dark:text-brand-300 dark:hover:bg-brand-900/30"
               >
                 {zoneSaved
                   ? "Zone sauvegardée pour les alertes ✓"
@@ -262,21 +277,21 @@ export default function SearchForm() {
           </div>
 
           {result.leads.length > 0 && (
-            <div className="h-72 overflow-hidden rounded-xl shadow-sm ring-1 ring-gray-200">
+            <div className="h-72 overflow-hidden rounded-xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-800">
               <MapView leads={result.leads} />
             </div>
           )}
 
-          <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200">
-            <ul className="divide-y divide-gray-100">
+          <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+            <ul className="divide-y divide-gray-100 dark:divide-gray-800">
               {result.leads.slice(0, 15).map((lead, i) => (
                 <li
                   key={lead.id}
                   className="animate-fade-in-up p-3 text-sm"
                   style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
                 >
-                  <p className="font-medium text-gray-800">{lead.name}</p>
-                  <p className="text-gray-500">{lead.address}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-100">{lead.name}</p>
+                  <p className="text-gray-500 dark:text-gray-400">{lead.address}</p>
                   <ContactLinks
                     phone={lead.phone}
                     email={lead.email}
@@ -289,7 +304,7 @@ export default function SearchForm() {
               ))}
             </ul>
             {result.leads.length > 15 && (
-              <p className="border-t border-gray-100 p-3 text-xs text-gray-400">
+              <p className="border-t border-gray-100 p-3 text-xs text-gray-400 dark:border-gray-800 dark:text-gray-500">
                 +{result.leads.length - 15} autres — voir la liste complète dans « Mes leads ».
               </p>
             )}

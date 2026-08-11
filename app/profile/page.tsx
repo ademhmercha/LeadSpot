@@ -21,7 +21,7 @@ export default async function ProfilePage() {
 
   return (
     <ProfileClient
-      email={profile?.email ?? user.email ?? ""}
+      email={user.email ?? profile?.email ?? ""}
       memberSince={profile?.created_at ?? user.created_at ?? null}
       usage={usage}
     />

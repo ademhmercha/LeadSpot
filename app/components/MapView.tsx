@@ -35,7 +35,7 @@ export default function MapView({ leads }: MapViewProps) {
 
   if (!apiKey) {
     return (
-      <div className="flex h-full items-center justify-center rounded-xl bg-gray-100 p-6 text-center text-sm text-gray-500">
+      <div className="flex h-full items-center justify-center rounded-xl bg-gray-100 p-6 text-center text-sm text-gray-500 dark:bg-gray-800 dark:text-gray-400">
         Carte indisponible : définissez <code>NEXT_PUBLIC_MAP_TILES_API_KEY</code> (MapTiler, free tier) pour
         l&apos;activer.
       </div>

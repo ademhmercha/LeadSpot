@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase-server";
 import { isSocialOnlyOrMissing, searchPlaces } from "@/lib/geoapify";
 import { buildSearchCacheKey, getCachedSearch, setCachedSearch } from "@/lib/redis";
 import { sendNewLeadsAlertEmail } from "@/lib/resend";
+import { sendPushNotification } from "@/lib/webpush";
 import { verifyQstashSignature } from "@/lib/qstash-verify";
 import type { Lead, SavedZone } from "@/lib/types";
 
@@ -97,6 +98,28 @@ export async function POST(req: NextRequest) {
             category: zone.category,
             leads: (inserted ?? []) as Lead[],
           });
+        }
+
+        const { data: subscriptions } = await supabase
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", zone.user_id);
+
+        const expiredEndpoints: string[] = [];
+        for (const sub of (subscriptions ?? []) as { endpoint: string; p256dh: string; auth: string }[]) {
+          const { expired } = await sendPushNotification(sub, {
+            title: `LeadSpot : ${newPlaces.length} nouveau(x) lead(s)`,
+            body: `${newPlaces.length} nouvel(s) établissement(s) sans site web trouvé(s) à ${zone.zone_label} (${zone.category}).`,
+            url: "/dashboard",
+          });
+          if (expired) expiredEndpoints.push(sub.endpoint);
+        }
+        if (expiredEndpoints.length > 0) {
+          await supabase
+            .from("push_subscriptions")
+            .delete()
+            .eq("user_id", zone.user_id)
+            .in("endpoint", expiredEndpoints);
         }
       }
 

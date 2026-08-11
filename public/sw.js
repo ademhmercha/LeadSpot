@@ -20,6 +20,44 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/dashboard";
+  event.waitUntil(
+    (async () => {
+      const allClients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const client of allClients) {
+        if ("focus" in client) {
+          await client.focus();
+          await client.navigate(url);
+          return;
+        }
+      }
+      if (self.clients.openWindow) await self.clients.openWindow(url);
+    })()
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let data = { title: "LeadSpot", body: "" };
+  try {
+    data = { ...data, ...JSON.parse(event.data?.text() || "{}") };
+  } catch {
+    /* payload malformé : on affiche le texte brut s'il existe */
+    if (event.data) data = { ...data, body: event.data.text() };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      data: { url: data.url || "/dashboard" },
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: "leadspot-new-leads",
+      renotify: true,
+    })
+  );
+});
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;

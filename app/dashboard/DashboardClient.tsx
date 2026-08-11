@@ -30,13 +30,13 @@ export default function DashboardClient({ initialLeads }: { initialLeads: Lead[]
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">Mes leads</h1>
-            <p className="text-sm text-gray-500">{leads.length} lead(s) enregistré(s)</p>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Mes leads</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{leads.length} lead(s) enregistré(s)</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowMap((v) => !v)}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-all duration-150 hover:bg-gray-50 active:scale-[0.98]"
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-all duration-150 hover:bg-gray-50 active:scale-[0.98] dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               {showMap ? "Masquer la carte" : "Voir la carte"}
             </button>
@@ -54,7 +54,7 @@ export default function DashboardClient({ initialLeads }: { initialLeads: Lead[]
         </div>
 
         {showMap && (
-          <div className="animate-fade-in-up mb-4 h-96 overflow-hidden rounded-xl shadow-sm ring-1 ring-gray-200">
+          <div className="animate-fade-in-up mb-4 h-96 overflow-hidden rounded-xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-800">
             <MapView leads={leads} />
           </div>
         )}
