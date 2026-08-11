@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { LEAD_STATUSES, LEAD_STATUS_LABELS } from "@/lib/types";
 import StatusBadge from "./StatusBadge";
 import ContactLinks from "./ContactLinks";
+
+const PAGE_SIZE = 20;
 
 type SortKey = "created_at" | "name" | "status";
 
@@ -25,6 +27,7 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const withContacts = useMemo(() => leads.filter((l) => l.phone || l.email).length, [leads]);
 
@@ -42,6 +45,16 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [leads, statusFilter, contactOnly, search, sortKey]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+  // Réclame la page courante quand le nombre de résultats change (filtres,
+  // recherche ou suppression d'un lead sur la dernière page).
+  useEffect(() => {
+    setPage((p) => Math.min(p, pageCount));
+  }, [pageCount]);
+
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   async function updateLead(id: string, patch: Partial<Pick<Lead, "status" | "notes" | "phone" | "email">>) {
     setSavingId(id);
@@ -72,13 +85,19 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
             type="text"
             placeholder="Rechercher un nom ou une adresse..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:w-64 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
           <div className="flex gap-2">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as LeadStatus | "all")}
+              onChange={(e) => {
+                setStatusFilter(e.target.value as LeadStatus | "all");
+                setPage(1);
+              }}
               className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="all">Tous les statuts</option>
@@ -90,7 +109,10 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
             </select>
             <select
               value={sortKey}
-              onChange={(e) => setSortKey(e.target.value as SortKey)}
+              onChange={(e) => {
+                setSortKey(e.target.value as SortKey);
+                setPage(1);
+              }}
               className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             >
               <option value="created_at">Plus récents</option>
@@ -105,7 +127,10 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
             <input
               type="checkbox"
               checked={contactOnly}
-              onChange={(e) => setContactOnly(e.target.checked)}
+              onChange={(e) => {
+                setContactOnly(e.target.checked);
+                setPage(1);
+              }}
               className="h-4 w-4 rounded border-gray-300 text-brand-600 transition-colors focus:ring-brand-500"
             />
             Coordonnées disponibles uniquement (téléphone ou email)
@@ -121,7 +146,7 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
           <li className="p-6 text-center text-sm text-gray-400 dark:text-gray-500">Aucun lead à afficher.</li>
         )}
 
-        {filtered.map((lead, i) => (
+        {paginated.map((lead, i) => (
           <li
             key={lead.id}
             className="animate-fade-in-up p-4 transition-colors"
@@ -225,6 +250,30 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
           </li>
         ))}
       </ul>
+
+      {filtered.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3 dark:border-gray-800">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {filtered.length} lead(s) — page {page} / {pageCount}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-all duration-150 hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              Précédent
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+              disabled={page >= pageCount}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-all duration-150 hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              Suivant
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
