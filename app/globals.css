@@ -9,6 +9,34 @@ body {
 
 body {
   @apply bg-gray-50 text-gray-900;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Retour tactile immédiat, sans surbrillance iOS ni double-tap zoom. */
+a,
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * iOS zoome automatiquement sur les champs dont la font-size est < 16px.
+ * Sur mobile, on force 16px sur les inputs/select/textarea pour l'éviter.
+ */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Zones de sécurité iOS (notch / barre d'onglets) en mode standalone PWA. */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .leaflet-container {
