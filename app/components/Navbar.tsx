@@ -5,8 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
 const LINKS = [
-  { href: "/search", label: "Rechercher" },
-  { href: "/dashboard", label: "Mes leads" },
+  { href: "/search", label: "Rechercher", short: "Chercher" },
+  { href: "/dashboard", label: "Mes leads", short: "Leads" },
+  { href: "/profile", label: "Profil", short: "Profil" },
 ];
 
 export default function Navbar() {
@@ -31,11 +32,12 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition sm:px-3 ${
+              className={`rounded-lg px-2 py-1.5 text-sm font-medium transition sm:px-3 ${
                 pathname.startsWith(link.href) ? "bg-brand-50 text-brand-700" : "text-gray-600 hover:bg-gray-100"
               }`}
             >
-              {link.label}
+              <span className="sm:hidden">{link.short}</span>
+              <span className="hidden sm:inline">{link.label}</span>
             </Link>
           ))}
           <button
