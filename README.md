@@ -2,7 +2,7 @@
 
 Outil de prospection pour freelances/agences web : trouve les établissements locaux (restaurants, cafés, salons de coiffure, etc.) **sans site web** — ou avec seulement une page Facebook/Instagram — dans une zone géographique donnée.
 
-> **Statut du projet : usage personnel / portfolio / démo.** Pas encore de clients payants. Voir [Point de vigilance n°1](#1--vercel-hobby--usage-non-commercial-uniquement) avant de commercialiser.
+
 
 ## Contrainte de conception
 
@@ -62,12 +62,6 @@ npm install
 
 ### 3. Configurer les variables d'environnement
 
-```bash
-cp .env.example .env.local
-```
-
-Remplir `.env.local` avec les valeurs de chaque service (voir table ci-dessus). Détail des variables :
-
 | Variable | Description |
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | URL du projet Supabase |
@@ -91,17 +85,6 @@ Dans le SQL Editor du dashboard Supabase, exécuter le contenu de [`supabase/sch
 npm run dev
 ```
 
-→ [http://localhost:3000](http://localhost:3000)
-
-### 6. (Optionnel en local) Programmer les cron QStash
-
-Les deux tâches récurrentes (rescan hebdomadaire, keepalive) sont créées une fois via :
-
-```bash
-QSTASH_TOKEN=... NEXT_PUBLIC_APP_URL=https://votre-app.vercel.app npx tsx scripts/setup-qstash.ts
-```
-
-(Nécessite une URL publique — inutile de le lancer contre `localhost` sauf via un tunnel type ngrok.)
 
 ## Déploiement
 
