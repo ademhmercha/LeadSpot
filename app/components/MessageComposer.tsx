@@ -54,7 +54,6 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
   }, [channel, leads]);
 
   const overrideCount = Object.keys(overrides).length;
-  const hasNamePlaceholder = /\{\{\s*name\s*\}\}/.test(message);
 
   useEffect(() => {
     let cancelled = false;
@@ -352,17 +351,7 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                Les coordonnées ({MESSAGE_PLACEHOLDERS[1].token}, {MESSAGE_PLACEHOLDERS[2].token}...) sont remplacées
-                automatiquement par celles de chaque destinataire — rien à écrire manuellement.
-              </p>
             </div>
-
-            {channel === "email" && (
-              <p className="mb-3 mt-2 text-xs text-gray-400 dark:text-gray-500">
-                Chaque destinataire recevra un email individuel (jamais d&apos;envoi groupé).
-              </p>
-            )}
 
             {recipients.length > 0 && (
               <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
@@ -434,12 +423,6 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
                     );
                   })}
                 </ul>
-                {channel === "whatsapp" && (
-                  <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-                    WhatsApp n&apos;a pas d&apos;API gratuite d&apos;envoi automatique : ouvrez chaque lien, le message
-                    est déjà pré-rempli avec les données du lead.
-                  </p>
-                )}
               </div>
             )}
 
@@ -448,11 +431,6 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
               <p className="mb-3 text-sm text-amber-600 dark:text-amber-400">
                 Aucun lead sélectionné ne dispose{" "}
                 {channel === "email" ? "d'une adresse email" : "d'un numéro WhatsApp"}.
-              </p>
-            )}
-            {!hasNamePlaceholder && (
-              <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
-                Astuce : ajoutez {"{{name}}"} dans le message pour le personnaliser avec le nom de chaque lead.
               </p>
             )}
 
