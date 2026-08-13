@@ -1,6 +1,7 @@
 -- ============================================================================
 -- LeadSpot — Supabase (Postgres) schema
 -- Run this in the Supabase SQL editor, or via `supabase db push` / migrations.
+-- Idempotent : ré-exécutable sans danger.
 -- ============================================================================
 
 -- Extensions ------------------------------------------------------------
@@ -17,9 +18,11 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles
   for select using (auth.uid() = id);
 
+drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own" on public.profiles
   for update using (auth.uid() = id);
 
@@ -45,13 +48,20 @@ create trigger on_auth_user_created
 -- ============================================================================
 -- leads — establishments discovered via Geoapify that have no real website
 -- ============================================================================
-create type public.lead_status as enum (
-  'nouveau',
-  'contacte',
-  'interesse',
-  'converti',
-  'pas_interesse'
-);
+-- Création idempotente de l'enum (Postgres n'a pas de CREATE TYPE IF NOT EXISTS).
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'lead_status') then
+    create type public.lead_status as enum (
+      'nouveau',
+      'contacte',
+      'interesse',
+      'converti',
+      'pas_interesse'
+    );
+  end if;
+end;
+$$;
 
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
@@ -94,15 +104,19 @@ alter table public.leads add column if not exists siret text;
 
 alter table public.leads enable row level security;
 
+drop policy if exists "leads_select_own" on public.leads;
 create policy "leads_select_own" on public.leads
   for select using (auth.uid() = user_id);
 
+drop policy if exists "leads_insert_own" on public.leads;
 create policy "leads_insert_own" on public.leads
   for insert with check (auth.uid() = user_id);
 
+drop policy if exists "leads_update_own" on public.leads;
 create policy "leads_update_own" on public.leads
   for update using (auth.uid() = user_id);
 
+drop policy if exists "leads_delete_own" on public.leads;
 create policy "leads_delete_own" on public.leads
   for delete using (auth.uid() = user_id);
 
@@ -140,17 +154,60 @@ create index if not exists saved_zones_alerts_idx on public.saved_zones (alerts_
 
 alter table public.saved_zones enable row level security;
 
+drop policy if exists "saved_zones_select_own" on public.saved_zones;
 create policy "saved_zones_select_own" on public.saved_zones
   for select using (auth.uid() = user_id);
 
+drop policy if exists "saved_zones_insert_own" on public.saved_zones;
 create policy "saved_zones_insert_own" on public.saved_zones
   for insert with check (auth.uid() = user_id);
 
+drop policy if exists "saved_zones_update_own" on public.saved_zones;
 create policy "saved_zones_update_own" on public.saved_zones
   for update using (auth.uid() = user_id);
 
+drop policy if exists "saved_zones_delete_own" on public.saved_zones;
 create policy "saved_zones_delete_own" on public.saved_zones
   for delete using (auth.uid() = user_id);
+
+-- ============================================================================
+-- message_templates — modèles de messages réutilisables (email / WhatsApp)
+-- ============================================================================
+create table if not exists public.message_templates (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  name text not null,
+  channel text not null check (channel in ('email', 'whatsapp')),
+  subject text, -- objet, canal email uniquement
+  message text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists message_templates_user_id_idx on public.message_templates (user_id);
+
+alter table public.message_templates enable row level security;
+
+drop policy if exists "message_templates_select_own" on public.message_templates;
+create policy "message_templates_select_own" on public.message_templates
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "message_templates_insert_own" on public.message_templates;
+create policy "message_templates_insert_own" on public.message_templates
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "message_templates_update_own" on public.message_templates;
+create policy "message_templates_update_own" on public.message_templates
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "message_templates_delete_own" on public.message_templates;
+create policy "message_templates_delete_own" on public.message_templates
+  for delete using (auth.uid() = user_id);
+
+drop trigger if exists message_templates_set_updated_at on public.message_templates;
+create trigger message_templates_set_updated_at
+  before update on public.message_templates
+  for each row execute procedure public.set_updated_at();
 
 -- ============================================================================
 -- usage — one row per user per calendar month, counts searches
@@ -166,6 +223,7 @@ create table if not exists public.usage (
 
 alter table public.usage enable row level security;
 
+drop policy if exists "usage_select_own" on public.usage;
 create policy "usage_select_own" on public.usage
   for select using (auth.uid() = user_id);
 
@@ -225,11 +283,14 @@ create index if not exists push_subscriptions_user_id_idx on public.push_subscri
 
 alter table public.push_subscriptions enable row level security;
 
+drop policy if exists "push_subscriptions_select_own" on public.push_subscriptions;
 create policy "push_subscriptions_select_own" on public.push_subscriptions
   for select using (auth.uid() = user_id);
 
+drop policy if exists "push_subscriptions_insert_own" on public.push_subscriptions;
 create policy "push_subscriptions_insert_own" on public.push_subscriptions
   for insert with check (auth.uid() = user_id);
 
+drop policy if exists "push_subscriptions_delete_own" on public.push_subscriptions;
 create policy "push_subscriptions_delete_own" on public.push_subscriptions
   for delete using (auth.uid() = user_id);

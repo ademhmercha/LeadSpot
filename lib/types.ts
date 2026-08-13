@@ -56,6 +56,17 @@ export interface SavedZone {
   created_at: string;
 }
 
+export interface MessageTemplate {
+  id: string;
+  user_id: string;
+  name: string;
+  channel: "email" | "whatsapp";
+  subject: string | null;
+  message: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface GeoapifyPlace {
   place_id: string;
   name: string;
