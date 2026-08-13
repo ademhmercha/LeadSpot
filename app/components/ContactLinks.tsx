@@ -1,4 +1,6 @@
-﻿interface ContactLinksProps {
+﻿import { toWhatsAppNumber } from "@/lib/whatsapp";
+
+interface ContactLinksProps {
   phone: string | null;
   email: string | null;
   siret?: string | null;
@@ -16,20 +18,6 @@
  * sans clÃ©, pour que l'utilisateur vÃ©rifie lui-mÃªme et enregistre ce qu'il
  * trouve (voir l'affordance d'Ã©dition dans LeadTable).
  */
-
-/**
- * Convertit un numÃ©ro de tÃ©lÃ©phone au format international requis par
- * WhatsApp (liens wa.me). Les numÃ©ros franÃ§ais Â« 0X XX XX XX XX Â» sont
- * automatiquement convertis en Â« 33X XX XX XX XX Â», le prÃ©fixe international
- * Â« 00 Â» est retirÃ©, et les autres formats sont conservÃ©s tels quels.
- */
-function toWhatsAppNumber(phone: string): string | null {
-  const digits = phone.replace(/\D/g, "");
-  if (!digits) return null;
-  if (digits.startsWith("00")) return digits.slice(2);
-  if (digits.startsWith("0") && digits.length === 10) return `33${digits.slice(1)}`;
-  return digits;
-}
 
 /**
  * Construit un lien mailto avec le destinataire, un objet et un message

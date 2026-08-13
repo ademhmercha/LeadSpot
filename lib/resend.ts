@@ -10,7 +10,25 @@ function getResend(): Resend {
   return client;
 }
 
-const FROM_ADDRESS = "LeadSpot <onboarding@resend.dev>"; // Resend's free-tier sandbox sender.
+// Expéditeur par défaut : la sandbox gratuite de Resend. Une fois un domaine
+// vérifié (plan gratuit toujours), définir RESEND_FROM_EMAIL pour recevoir les
+// réponses des prospects dans sa propre boîte mail.
+const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL ?? "LeadSpot <onboarding@resend.dev>";
+
+/**
+ * Envoie un email individuel à un seul destinataire (prospection). Utilisé par
+ * la campagne d'envoi : chaque lead reçoit son propre email, jamais un envoi
+ * groupé visible (pas de CCI entre destinataires).
+ */
+export async function sendOutreachEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<void> {
+  const resend = getResend();
+  const { to, subject, html } = opts;
+  await resend.emails.send({ from: FROM_ADDRESS, to, subject, html });
+}
 
 export async function sendNewLeadsAlertEmail(opts: {
   to: string;
