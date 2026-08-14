@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server";
 import { sendOutreachEmail } from "@/lib/resend";
 import { escapeHtml, personalizeMessage } from "@/lib/message";
+import { appendOpenTrackingPixel } from "@/lib/tracking";
+import { recordLeadEvent } from "@/lib/lead-events";
 import type { Lead } from "@/lib/types";
 
 const MAX_RECIPIENTS = 50;
@@ -31,7 +33,7 @@ function personalizeForLead(text: string, lead: Lead): string {
 }
 
 function buildEmailHtml(message: string, lead: Lead): string {
-  return `
+  const html = `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;line-height:1.5">
       ${message
         .split(/\n{2,}/)
@@ -40,6 +42,9 @@ function buildEmailHtml(message: string, lead: Lead): string {
       <p style="margin-top:24px;color:#888;font-size:12px">— ${escapeHtml(lead.name)}${lead.address ? `, ${escapeHtml(lead.address)}` : ""}</p>
     </div>
   `;
+  // Pixel invisible : marque l'ouverture de l'email (statut « intéressé » si
+  // le lead était « contacté »).
+  return appendOpenTrackingPixel(html, lead.id);
 }
 
 export async function POST(req: NextRequest) {
@@ -104,6 +109,11 @@ export async function POST(req: NextRequest) {
       .in("id", leadIds)
       .eq("user_id", user.id);
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+
+    const admin = createServiceRoleClient();
+    for (const lead of leads) {
+      await recordLeadEvent(admin, { userId: user.id, leadId: lead.id, type: "sent", metadata: { channel } });
+    }
     return NextResponse.json({ sent: leadIds.length, skipped: 0, sentLeadIds: leadIds });
   }
 
@@ -114,6 +124,8 @@ export async function POST(req: NextRequest) {
   // ---------------------------------------------------------------
   const failures: string[] = [];
   const skippedIds: string[] = [];
+  const sentIds: string[] = [];
+  const admin = createServiceRoleClient();
   for (const entry of recipients) {
     const lead = leadById.get(entry.leadId);
     if (!lead?.email) {
@@ -127,12 +139,14 @@ export async function POST(req: NextRequest) {
     const personalMessage = personalizeForLead(entry.message, lead);
     try {
       await sendOutreachEmail({ to: lead.email, subject: personalSubject, html: buildEmailHtml(personalMessage, lead) });
+      sentIds.push(entry.leadId);
+      await recordLeadEvent(admin, { userId: user.id, leadId: lead.id, type: "sent", metadata: { channel } });
     } catch {
       failures.push(entry.leadId);
     }
   }
 
-  const sentLeadIds = recipients.map((r) => r.leadId).filter((id) => !failures.includes(id) && !skippedIds.includes(id));
+  const sentLeadIds = sentIds;
   const sent = sentLeadIds.length;
 
   if (sent > 0) {

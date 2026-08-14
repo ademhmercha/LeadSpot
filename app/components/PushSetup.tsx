@@ -119,10 +119,6 @@ export default function PushSetup() {
   return (
     <section className="mt-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:p-6 dark:bg-gray-900 dark:ring-gray-800">
       <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Notifications push</h2>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-        Recevez une notification sur ce téléphone/ordinateur quand de nouveaux leads sont découverts sur vos zones
-        suivies (scan hebdomadaire).
-      </p>
 
       {error && <p className="animate-fade-in-up mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
 

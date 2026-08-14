@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { LEAD_STATUSES, LEAD_STATUS_LABELS } from "@/lib/types";
 import { toWhatsAppNumber } from "@/lib/whatsapp";
@@ -293,6 +294,12 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
 
             <div className="mt-2 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
               <span>Recherché sur : {lead.search_zone}</span>
+              <Link
+                href={`/leads/${lead.id}`}
+                className="font-medium text-brand-600 transition-colors hover:underline dark:text-brand-400"
+              >
+                Fiche
+              </Link>
               <button
                 onClick={() => setExpandedId(expandedId === lead.id ? null : lead.id)}
                 className="font-medium text-brand-600 transition-colors hover:underline dark:text-brand-400"

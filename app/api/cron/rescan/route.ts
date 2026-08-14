@@ -5,6 +5,7 @@ import { buildSearchCacheKey, getCachedSearch, setCachedSearch } from "@/lib/red
 import { sendNewLeadsAlertEmail } from "@/lib/resend";
 import { sendPushNotification } from "@/lib/webpush";
 import { verifyQstashSignature } from "@/lib/qstash-verify";
+import { storeFoundPlaces, type FoundPlaceRow } from "@/lib/leads-store";
 import type { Lead, SavedZone } from "@/lib/types";
 
 /**
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: zonesError.message }, { status: 500 });
   }
 
-  const results: { zoneId: string; newLeads: number; error?: string }[] = [];
+  const results: { zoneId: string; newLeads: number; merged?: number; error?: string }[] = [];
 
   for (const zone of (zones ?? []) as SavedZone[]) {
     try {
@@ -50,41 +51,25 @@ export async function POST(req: NextRequest) {
 
       const withoutWebsite = places.filter((p) => isSocialOnlyOrMissing(p.website));
 
-      const { data: existingLeads } = await supabase
-        .from("leads")
-        .select("place_id")
-        .eq("user_id", zone.user_id)
-        .in(
-          "place_id",
-          withoutWebsite.map((p) => p.place_id)
-        );
-      const existingIds = new Set((existingLeads ?? []).map((l) => l.place_id));
-      const newPlaces = withoutWebsite.filter((p) => !existingIds.has(p.place_id));
+      const rows: FoundPlaceRow[] = withoutWebsite.map((p) => ({
+        place_id: p.place_id,
+        name: p.name,
+        category: p.category,
+        address: p.address,
+        lat: p.lat,
+        lon: p.lon,
+        phone: p.phone,
+        email: p.email,
+        siret: p.siret,
+        website: p.website,
+        search_category: zone.category,
+        search_zone: zone.zone_label,
+        search_radius_km: zone.radius_km,
+      }));
 
-      if (newPlaces.length > 0) {
-        const rows = newPlaces.map((p) => ({
-          user_id: zone.user_id,
-          place_id: p.place_id,
-          name: p.name,
-          category: p.category,
-          address: p.address,
-          lat: p.lat,
-          lon: p.lon,
-          phone: p.phone,
-          email: p.email,
-          siret: p.siret,
-          website: p.website,
-          search_category: zone.category,
-          search_zone: zone.zone_label,
-          search_radius_km: zone.radius_km,
-        }));
+      const { leads: insertedLeads, inserted, merged } = await storeFoundPlaces(supabase, zone.user_id, rows);
 
-        const { data: inserted, error: insertError } = await supabase
-          .from("leads")
-          .upsert(rows, { onConflict: "user_id,place_id", ignoreDuplicates: false })
-          .select();
-        if (insertError) throw insertError;
-
+      if (insertedLeads.length > 0) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("email")
@@ -96,7 +81,7 @@ export async function POST(req: NextRequest) {
             to: profile.email,
             zoneLabel: zone.zone_label,
             category: zone.category,
-            leads: (inserted ?? []) as Lead[],
+            leads: (insertedLeads ?? []) as Lead[],
           });
         }
 
@@ -108,8 +93,8 @@ export async function POST(req: NextRequest) {
         const expiredEndpoints: string[] = [];
         for (const sub of (subscriptions ?? []) as { endpoint: string; p256dh: string; auth: string }[]) {
           const { expired } = await sendPushNotification(sub, {
-            title: `LeadSpot : ${newPlaces.length} nouveau(x) lead(s)`,
-            body: `${newPlaces.length} nouvel(s) établissement(s) sans site web trouvé(s) à ${zone.zone_label} (${zone.category}).`,
+            title: `LeadSpot : ${insertedLeads.length} nouveau(x) lead(s)`,
+            body: `${insertedLeads.length} nouvel(s) établissement(s) sans site web trouvé(s) à ${zone.zone_label} (${zone.category}).`,
             url: "/dashboard",
           });
           if (expired) expiredEndpoints.push(sub.endpoint);
@@ -125,7 +110,7 @@ export async function POST(req: NextRequest) {
 
       await supabase.from("saved_zones").update({ last_scanned_at: new Date().toISOString() }).eq("id", zone.id);
 
-      results.push({ zoneId: zone.id, newLeads: newPlaces.length });
+      results.push({ zoneId: zone.id, newLeads: inserted, merged });
     } catch (err) {
       results.push({ zoneId: zone.id, newLeads: 0, error: (err as Error).message });
     }

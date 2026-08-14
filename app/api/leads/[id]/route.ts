@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { recordLeadEvent } from "@/lib/lead-events";
 import { LEAD_STATUSES } from "@/lib/types";
 
 interface RouteParams {
@@ -85,6 +86,13 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "Aucune modification fournie" }, { status: 400 });
   }
 
+  const { data: before } = await supabase
+    .from("leads")
+    .select("status")
+    .eq("id", params.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from("leads")
     .update(update)
@@ -95,6 +103,15 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Lead introuvable" }, { status: 404 });
+
+  if (update.status !== undefined && before && before.status !== update.status) {
+    await recordLeadEvent(supabase, {
+      userId: user.id,
+      leadId: params.id,
+      type: "status_changed",
+      metadata: { from: before.status, to: update.status as string },
+    });
+  }
 
   return NextResponse.json({ lead: data });
 }

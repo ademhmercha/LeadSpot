@@ -86,6 +86,7 @@ create table if not exists public.leads (
 
   status public.lead_status not null default 'nouveau',
   notes text,
+  email_opened_at timestamptz, -- première ouverture d'un email de prospection (suivi)
 
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -101,6 +102,7 @@ create index if not exists leads_search_idx on public.leads (user_id, search_cat
 -- no-op on fresh installs (already in the CREATE TABLE above).
 alter table public.leads add column if not exists email text;
 alter table public.leads add column if not exists siret text;
+alter table public.leads add column if not exists email_opened_at timestamptz;
 
 alter table public.leads enable row level security;
 
@@ -293,4 +295,62 @@ create policy "push_subscriptions_insert_own" on public.push_subscriptions
 
 drop policy if exists "push_subscriptions_delete_own" on public.push_subscriptions;
 create policy "push_subscriptions_delete_own" on public.push_subscriptions
+  for delete using (auth.uid() = user_id);
+
+-- ============================================================================
+-- lead_events — historique d'activité d'un lead (créé, message envoyé, email
+-- ouvert, statut modifié, doublon fusionné)
+-- ============================================================================
+create table if not exists public.lead_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  lead_id uuid not null references public.leads (id) on delete cascade,
+  type text not null check (type in ('created', 'status_changed', 'sent', 'opened', 'merged')),
+  metadata jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists lead_events_lead_id_idx on public.lead_events (lead_id);
+create index if not exists lead_events_user_id_idx on public.lead_events (user_id);
+
+alter table public.lead_events enable row level security;
+
+drop policy if exists "lead_events_select_own" on public.lead_events;
+create policy "lead_events_select_own" on public.lead_events
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "lead_events_insert_own" on public.lead_events;
+create policy "lead_events_insert_own" on public.lead_events
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "lead_events_delete_own" on public.lead_events;
+create policy "lead_events_delete_own" on public.lead_events
+  for delete using (auth.uid() = user_id);
+
+-- ============================================================================
+-- audits — lien d'audit partageable (public) généré pour un lead. L'id uuid du
+-- lien tient lieu de token non devinable : la page /audit/<id> est publique.
+-- ============================================================================
+create table if not exists public.audits (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  lead_id uuid not null references public.leads (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (lead_id)
+);
+
+create index if not exists audits_user_id_idx on public.audits (user_id);
+
+alter table public.audits enable row level security;
+
+drop policy if exists "audits_select_own" on public.audits;
+create policy "audits_select_own" on public.audits
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "audits_insert_own" on public.audits;
+create policy "audits_insert_own" on public.audits
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "audits_delete_own" on public.audits;
+create policy "audits_delete_own" on public.audits
   for delete using (auth.uid() = user_id);

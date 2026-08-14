@@ -18,6 +18,7 @@ const MapView = dynamic(() => import("./MapView"), {
 
 interface SearchResult {
   leads: Lead[];
+  mergedCount: number;
   totalFound: number;
   withoutWebsiteCount: number;
   fromCache: boolean;
@@ -260,6 +261,12 @@ export default function SearchForm() {
               <strong>{result.zoneLabel}</strong>
               {result.fromCache && " (résultats en cache, < 7 jours)"}.
             </p>
+            {result.mergedCount > 0 && (
+              <p className="mt-1 text-xs text-sky-600 dark:text-sky-400">
+                {result.mergedCount} doublon{result.mergedCount > 1 ? "s" : ""} fusionné{result.mergedCount > 1 ? "s" : ""} avec
+                un lead existant.
+              </p>
+            )}
 
             <div className="mt-3 flex flex-wrap gap-2">
               <button

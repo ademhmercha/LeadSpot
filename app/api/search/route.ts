@@ -3,6 +3,7 @@ import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supab
 import { geocodeZone, isSocialOnlyOrMissing, reverseGeocodeZone, searchPlaces } from "@/lib/geoapify";
 import { buildSearchCacheKey, getCachedSearch, setCachedSearch } from "@/lib/redis";
 import { tryConsumeSearchQuota } from "@/lib/usage";
+import { storeFoundPlaces, type FoundPlaceRow, type StoreResult } from "@/lib/leads-store";
 import type { GeoapifyPlace } from "@/lib/types";
 
 interface SearchRequestBody {
@@ -77,11 +78,13 @@ export async function POST(req: NextRequest) {
   //    Facebook/Instagram-only).
   const withoutWebsite = places.filter((p) => isSocialOnlyOrMissing(p.website));
 
-  // 5. Upsert into `leads` for this user (service role — bypasses RLS but
-  //    scoped explicitly to user.id below).
+  // 5. Stockage avec déduplication (service role — contourne RLS mais
+  //    filtré explicitement par user_id). Un établissement déjà présent
+  //    (même place_id, ou même nom + même ville) n'est pas dupliqué :
+  //    ses coordonnées manquantes sont complétées, son contexte d'origine
+  //    conservé.
   const admin = createServiceRoleClient();
-  const rows = withoutWebsite.map((p) => ({
-    user_id: user.id,
+  const rows: FoundPlaceRow[] = withoutWebsite.map((p) => ({
     place_id: p.place_id,
     name: p.name,
     category: p.category,
@@ -97,20 +100,16 @@ export async function POST(req: NextRequest) {
     search_radius_km: radiusKm,
   }));
 
-  let insertedLeads: unknown[] = [];
-  if (rows.length > 0) {
-    const { data, error } = await admin
-      .from("leads")
-      .upsert(rows, { onConflict: "user_id,place_id", ignoreDuplicates: false })
-      .select();
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    insertedLeads = data ?? [];
+  let storeResult: StoreResult;
+  try {
+    storeResult = await storeFoundPlaces(admin, user.id, rows);
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 
   return NextResponse.json({
-    leads: insertedLeads,
+    leads: storeResult.leads,
+    mergedCount: storeResult.merged,
     totalFound: places.length,
     withoutWebsiteCount: withoutWebsite.length,
     fromCache,

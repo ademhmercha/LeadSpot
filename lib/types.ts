@@ -39,6 +39,7 @@ export interface Lead {
   search_radius_km: number;
   status: LeadStatus;
   notes: string | null;
+  email_opened_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -65,6 +66,32 @@ export interface MessageTemplate {
   message: string;
   created_at: string;
   updated_at: string;
+}
+
+export type LeadEventType = "created" | "status_changed" | "sent" | "opened" | "merged";
+
+export interface LeadEvent {
+  id: string;
+  user_id: string;
+  lead_id: string;
+  type: LeadEventType;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export const LEAD_EVENT_LABELS: Record<LeadEventType, string> = {
+  created: "Lead créé",
+  status_changed: "Statut modifié",
+  sent: "Message envoyé",
+  opened: "Email ouvert",
+  merged: "Doublon fusionné",
+};
+
+export interface Audit {
+  id: string;
+  user_id: string;
+  lead_id: string;
+  created_at: string;
 }
 
 export interface GeoapifyPlace {

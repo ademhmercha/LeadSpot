@@ -129,9 +129,6 @@ export default function ProfileClient({ email, memberSince, usage }: ProfileClie
 
         <section className="mt-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:p-6 dark:bg-gray-900 dark:ring-gray-800">
           <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Changer l&apos;adresse email</h2>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Un email de confirmation vous sera envoyé à la nouvelle adresse pour valider le changement.
-          </p>
 
           <form onSubmit={handleEmailSubmit} className="mt-4 space-y-4">
             <div>
@@ -167,9 +164,6 @@ export default function ProfileClient({ email, memberSince, usage }: ProfileClie
 
         <section className="mt-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:p-6 dark:bg-gray-900 dark:ring-gray-800">
           <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Changer le mot de passe</h2>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Vous êtes déjà connecté : le changement est appliqué immédiatement, sans email de confirmation.
-          </p>
 
           <form onSubmit={handlePasswordSubmit} className="mt-4 space-y-4">
             <div>
