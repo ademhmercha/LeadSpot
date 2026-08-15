@@ -354,3 +354,12 @@ create policy "audits_insert_own" on public.audits
 drop policy if exists "audits_delete_own" on public.audits;
 create policy "audits_delete_own" on public.audits
   for delete using (auth.uid() = user_id);
+
+-- ============================================================================
+-- Nettoyage des leads sans aucun contact (téléphone ET email absents).
+-- Politique métier : seuls les établissements contactables sont enregistrés
+-- (lib/leads-store.ts). Cette suppression retire les anciens leads enregistrés
+-- avant l'application du filtre ; ré-exécuter le script ne supprime rien de
+-- plus (les insertions sont déjà filtrées à la source).
+-- ============================================================================
+delete from public.leads where phone is null and email is null;

@@ -254,10 +254,10 @@ export default function SearchForm() {
         <div className="animate-fade-in-up space-y-4">
           <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
             <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-              {result.withoutWebsiteCount} établissement(s) sans site web trouvé(s)
+              {result.leads.length} lead{result.leads.length > 1 ? "s" : ""} avec un contact trouvé{result.leads.length > 1 ? "s" : ""}
             </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Sur {result.totalFound} établissement(s) dans un rayon de {radiusKm} km autour de{" "}
+              Sur {result.withoutWebsiteCount} établissement(s) sans site web dans un rayon de {radiusKm} km autour de{" "}
               <strong>{result.zoneLabel}</strong>
               {result.fromCache && " (résultats en cache, < 7 jours)"}.
             </p>

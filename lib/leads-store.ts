@@ -113,6 +113,8 @@ async function mergeMissingFields(admin: SupabaseClient, userId: string, lead: L
 /**
  * Stocke les établissements trouvés pour un utilisateur en évitant les
  * doublons :
+ * - seuls les établissements **contactables** (téléphone OU email) sont
+ *   enregistrés — un prospect sans aucun contact ne peut pas être démarché ;
  * - même `place_id` → mise à jour des seules coordonnées manquantes (statut,
  *   notes et zone d'origine conservés) ;
  * - même nom + même ville avec un `place_id` différent → fusion dans le lead
@@ -125,20 +127,21 @@ export async function storeFoundPlaces(
   userId: string,
   places: FoundPlaceRow[]
 ): Promise<StoreResult> {
-  if (places.length === 0) return { leads: [], inserted: 0, merged: 0 };
+  const contactable = places.filter((p) => Boolean(p.phone || p.email));
+  if (contactable.length === 0) return { leads: [], inserted: 0, merged: 0 };
 
   const existingByPlaceId = await fetchLeadsInChunks(
     admin,
     userId,
     "place_id",
-    places.map((p) => p.place_id),
+    contactable.map((p) => p.place_id),
     "*"
   );
   const byPlaceId = new Map(existingByPlaceId.map((l) => [l.place_id, l]));
-  const newPlaces = places.filter((p) => !byPlaceId.has(p.place_id));
+  const newPlaces = contactable.filter((p) => !byPlaceId.has(p.place_id));
 
   // Rafraîchit les coordonnées manquantes des leads déjà connus.
-  for (const place of places) {
+  for (const place of contactable) {
     const existing = byPlaceId.get(place.place_id);
     if (existing) await mergeMissingFields(admin, userId, existing, place);
   }
@@ -188,10 +191,15 @@ export async function storeFoundPlaces(
     insertedLeads.push(...((data ?? []) as Lead[]));
   }
 
-  // Tous les leads présents après cette recherche (existants + insérés) :
-  // l'affichage de la zone montre l'ensemble, pas seulement les nouveautés.
+  // Tous les leads contactables présents après cette recherche (existants +
+  // insérés) : l'affichage de la zone montre l'ensemble, pas seulement les
+  // nouveautés.
   const allLeads = new Map<string, Lead>();
-  for (const l of existingByPlaceId as unknown as Lead[]) allLeads.set(l.id, l);
+  for (const l of existingByPlaceId as unknown as Lead[]) {
+    const place = byPlaceId.get(l.place_id);
+    const nowContactable = Boolean(l.phone || l.email || place?.phone || place?.email);
+    if (nowContactable) allLeads.set(l.id, l);
+  }
   for (const l of insertedLeads) allLeads.set(l.id, l);
 
   return { leads: [...allLeads.values()], inserted: insertedLeads.length, merged };

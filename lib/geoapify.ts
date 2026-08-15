@@ -175,20 +175,41 @@ export async function searchPlaces({
   const data = await res.json();
   const features: unknown[] = data?.features ?? [];
 
-  return features.map((f) => {
-    const feature = f as { properties: Record<string, unknown> };
-    const props = feature.properties;
-    return {
-      place_id: String(props.place_id),
-      name: (props.name as string) || (props.address_line1 as string) || "Établissement sans nom",
-      category,
-      address: (props.formatted as string) ?? null,
-      lat: props.lat as number,
-      lon: props.lon as number,
-      phone: extractPhone(props),
-      email: extractEmail(props),
-      siret: extractSiret(props),
-      website: extractWebsite(props),
-    } satisfies GeoapifyPlace;
-  });
+  return features
+    .map((f): GeoapifyPlace | null => {
+      const feature = f as { properties: Record<string, unknown> };
+      const props = feature.properties;
+
+      // Sans nom, un lieu n'est pas un établissement : c'est une adresse ou une
+      // rue. On ne le traite pas comme un lead (sinon « Rue de la République »
+      // s'affiche à la place d'un vrai commerce).
+      const name = (props.name as string | undefined)?.trim();
+      if (!name) return null;
+
+      // Vérifie que l'établissement appartient bien à la catégorie cherchée
+      // (accepte un parent ou un enfant de la catégorie) pour exclure les
+      // rues/tronçons qui remonteraient dans les résultats.
+      const cats = props.categories;
+      if (Array.isArray(cats) && cats.length > 0) {
+        const matches = (cats as unknown[]).some((c) => {
+          if (typeof c !== "string") return false;
+          return c === category || c.startsWith(`${category}.`) || category.startsWith(`${c}.`);
+        });
+        if (!matches) return null;
+      }
+
+      return {
+        place_id: String(props.place_id),
+        name,
+        category,
+        address: (props.formatted as string) ?? null,
+        lat: props.lat as number,
+        lon: props.lon as number,
+        phone: extractPhone(props),
+        email: extractEmail(props),
+        siret: extractSiret(props),
+        website: extractWebsite(props),
+      } satisfies GeoapifyPlace;
+    })
+    .filter((p): p is GeoapifyPlace => p !== null);
 }
