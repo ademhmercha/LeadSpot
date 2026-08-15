@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Lead, MessageTemplate } from "@/lib/types";
-import { MESSAGE_PLACEHOLDERS, personalizeMessage } from "@/lib/message";
+import { MESSAGE_PLACEHOLDERS, DEFAULT_OUTREACH_MESSAGE, DEFAULT_OUTREACH_SUBJECT, personalizeMessage } from "@/lib/message";
 import { toWhatsAppNumber } from "@/lib/whatsapp";
 
 type Channel = "email" | "whatsapp";
@@ -20,9 +20,8 @@ interface SendResponse {
   error?: string;
 }
 
-const DEFAULT_EMAIL_SUBJECT = "Proposition de site web";
-const DEFAULT_MESSAGE =
-  "Bonjour,\n\nNous accompagnons les entreprises locales comme {{name}} dans la création de leur site web.\n\nSouhaitez-vous en discuter ?";
+const DEFAULT_EMAIL_SUBJECT = DEFAULT_OUTREACH_SUBJECT;
+const DEFAULT_MESSAGE = DEFAULT_OUTREACH_MESSAGE;
 
 export default function MessageComposer({ leads, onClose, onSent }: MessageComposerProps) {
   const [channel, setChannel] = useState<Channel>("email");

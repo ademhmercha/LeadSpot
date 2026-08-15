@@ -17,7 +17,17 @@ export default function SignupPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        // Le lien de confirmation redirige vers cette page qui valide le
+        // compte et affiche le message de bienvenue. Sans cela, Supabase
+        // redirige vers la Site URL du dashboard (souvent mal configurée
+        // en local → erreur « localhost ne répond pas »).
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
 
     setLoading(false);
     if (error) {

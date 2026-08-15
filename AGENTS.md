@@ -15,25 +15,30 @@ Commentaires de code, UI, messages d'erreur, statuts et README sont **en frança
 ## Setup local
 1. `npm install`, puis `cp .env.example .env.local` et remplir. `.env.local` est gitignoré — **toute nouvelle variable d'env doit être documentée dans `.env.example`**.
 2. Créer le projet Supabase manuellement via le dashboard (jamais via Terraform), puis exécuter `supabase/schema.sql` dans le SQL Editor. Le schéma est **idempotent** (re-runnable sans danger) ; il n'y a pas de CLI Supabase ni de dossier migrations — c'est le seul fichier de schéma.
-3. Cron QStash (optionnel en local) : `QSTASH_TOKEN=... NEXT_PUBLIC_APP_URL=<URL publique> npx tsx scripts/setup-qstash.ts`. Nécessite une URL publique (ngrok ok) ; inutile contre `localhost`.
+3. Notifications push (optionnel) : clés VAPID générées localement via `npx web-push generate-vapid-keys` → `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (`lib/webpush.ts`).
+4. Cron QStash (optionnel en local) : `QSTASH_TOKEN=... NEXT_PUBLIC_APP_URL=<URL publique> npx tsx scripts/setup-qstash.ts`. Nécessite une URL publique (ngrok ok) ; inutile contre `localhost`.
 
 ## Architecture
-- `app/` — App Router : pages (`(auth)`, `search`, `dashboard`) + route handlers dans `app/api/*` (search, leads, saved-zones, usage, keepalive, cron/rescan).
-- `lib/` — toute la logique métier et les clients externes : `supabase.ts` (client navigateur), `supabase-server.ts` (client serveur anon + service role), `geoapify.ts`, `redis.ts`, `usage.ts`, `resend.ts`, `qstash.ts`, `qstash-verify.ts`, `types.ts`.
+- `app/` — App Router : pages `(auth)` (login/signup), `search`, `dashboard`, `leads/[id]` (fiche + historique), `profile`, et **`audit/[id]` (publique)** + route handlers dans `app/api/*` (search, leads, leads/export, leads/track, campaigns, templates, saved-zones, audits, push, usage, keepalive, cron/rescan).
+- `lib/` — logique métier et clients externes : `supabase.ts` (client navigateur), `supabase-server.ts` (clients serveur anon + service role), `geoapify.ts`, `redis.ts`, `usage.ts`, `leads-store.ts`, `lead-events.ts`, `message.ts`, `tracking.ts`, `resend.ts`, `whatsapp.ts`, `webpush.ts`, `qstash.ts`, `qstash-verify.ts`, `types.ts`.
 - `supabase/schema.sql` — schéma DB (tables, RLS, fonctions/triggers).
-- `scripts/setup-qstash.ts` — enregistre les 2 schedules QStash.
+- `scripts/setup-qstash.ts` — enregistre les 2 schedules QStash (rescan hebdo + keepalive ; cadence dans `lib/qstash.ts`).
 - `terraform/` — infra dev/staging/prod (voir section ci-dessous).
 
 ## Conventions critiques
-- **Détection de lead** : un établissement est un lead si `isSocialOnlyOrMissing(website)` est vrai (pas de site, ou domaine facebook.com/instagram.com uniquement) — `lib/geoapify.ts:15`. C'est la règle métier centrale.
-- **Deux clients Supabase serveur** : le client anon (RLS appliquée, session de l'utilisateur) pour tout ce qui est lié à la requête ; le **service role** (`createServiceRoleClient`) contourne RLS — uniquement depuis des contextes serveur de confiance (cron, quota, upsert des leads) et toujours en filtrant explicitement par `user_id`.
-- **Quota utilisateur** : par défaut 10 recherches/mois (`FREE_TIER_MONTHLY_SEARCH_LIMIT`), incrémenté atomiquement via le RPC Postgres `increment_usage` (`lib/usage.ts`, `supabase/schema.sql:178`). Vérifié **avant** tout appel Geoapify dans `app/api/search/route.ts`.
+- **Détection de lead** : un établissement est un lead si `isSocialOnlyOrMissing(website)` est vrai (pas de site, ou domaine facebook.com/instagram.com uniquement) — `lib/geoapify.ts`. C'est la règle métier centrale.
+- **Stockage des leads** (`lib/leads-store.ts`) : seuls les établissements **contactables (téléphone OU email)** sont enregistrés. Déduplication : même `place_id` → complétion des seuls champs manquants (statut/notes/zone d'origine conservés) ; même nom + même ville avec un autre `place_id` → fusion. Insertions et fusions loggées dans `lead_events` (`created`/`merged`).
+- **Deux clients Supabase serveur** : le client anon (RLS appliquée, session de l'utilisateur) pour tout ce qui est lié à la requête ; le **service role** (`createServiceRoleClient`) contourne RLS — uniquement depuis des contextes serveur de confiance (cron, quota, upsert/events des leads, pixel de tracking) et toujours en filtrant explicitement par `user_id`.
+- **Quota utilisateur** : 10 recherches/mois par défaut (`FREE_TIER_MONTHLY_SEARCH_LIMIT`), incrémenté atomiquement via le RPC Postgres `increment_usage` (`lib/usage.ts`, `supabase/schema.sql`). Vérifié **avant** tout appel Geoapify dans `app/api/search/route.ts`. Le cron de rescan (`app/api/cron/rescan/route.ts`) **contourne ce quota** (job de fond) mais pas le cache Redis.
 - **Cache de recherche** : Upstash Redis, TTL 7 jours, clé = `leadspot:search:<categorie>:<lat,lon arrondis à 3 décimales>:<rayon>` (`lib/redis.ts`). Les résultats bruts sont cachés **avant** le filtrage lead pour maximiser le cache.
+- **Envoi de campagne** (`app/api/campaigns/route.ts`) : un email **individuel par destinataire via Resend, jamais de CCI**, max 50 destinataires, passage au statut `contacte` + événement `sent`. Canal WhatsApp = passage au statut `contacte` uniquement (liens `wa.me` ouverts par l'utilisateur, `lib/whatsapp.ts`).
+- **Suivi d'ouverture** : pixel auto-hébergé à `/api/leads/track` (route publique, signée HMAC-SHA256 avec `SUPABASE_SERVICE_ROLE_KEY` comme clé — `lib/tracking.ts`). Première ouverture → `email_opened_at` + passage à `interesse` si le lead était `contacte`. Sans `NEXT_PUBLIC_APP_URL`, aucun pixel n'est ajouté aux emails.
+- **Modèles de messages** : placeholders `{{name}}`, `{{email}}`, `{{phone}}`, `{{address}}`, `{{website}}`, `{{siret}}`, `{{category}}` remplacés automatiquement par les données du lead (`lib/message.ts`).
 - **Status des leads** : enum Postgres + `lib/types.ts`, en français **sans accents** : `nouveau`, `contacte`, `interesse`, `converti`, `pas_interesse` (les libellés affichés ont les accents).
 - **Tuiles carte** : jamais de tuiles OSM directes en prod — utiliser la clé `NEXT_PUBLIC_MAP_TILES_API_KEY` (MapTiler/Stadia).
 - **Vérification QStash** (`lib/qstash-verify.ts`) : désactivée si les signing keys ne sont pas configurées (dev local) — **ne pas les laisser absentes en prod**.
 - **Contrainte de conception** : tous les services ont un free tier **sans carte bancaire** (Geoapify, pas Google Places). Ne pas introduire de service qui en exige un.
-- Middleware (`middleware.ts`) : pages protégées par session ; routes publiques = `/login`, `/signup`, `/api/keepalive`, `/api/cron/rescan`. Les routes API vérifient elles-mêmes l'auth.
+- Middleware (`middleware.ts`) : pages protégées par session ; routes publiques = `/login`, `/signup`, `/audit` (lien d'audit public — l'uuid du lien sert de token non devinable), `/api/keepalive`, `/api/cron/rescan`. Les routes API vérifient elles-mêmes l'auth.
 
 ## Terraform
 - `terraform/environments/{dev,staging,prod}/` : **root modules indépendants** (chacun son `init`, sa state). Les `providers.tf` / `backend.tf` à la racine de `terraform/` sont des **templates de référence**, pas exécutés — à copier quand on ajoute un environnement.

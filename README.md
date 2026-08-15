@@ -79,7 +79,15 @@ npm install
 
 Dans le SQL Editor du dashboard Supabase, exécuter le contenu de [`supabase/schema.sql`](supabase/schema.sql). Il crée les tables (`profiles`, `leads`, `saved_zones`, `usage`, `keepalive_pings`), les policies RLS, et les fonctions/triggers nécessaires (création auto de profil, incrément atomique du quota, `updated_at`).
 
-### 5. Lancer l'app
+### 5. Configurer l'URL du projet dans Supabase Auth
+
+Dans le dashboard Supabase → **Authentication → URL Configuration**, renseigner :
+- **Site URL** : `http://localhost:3000` (dev) ou l'URL du déploiement,
+- **Redirect URLs** : ajouter `http://localhost:3000/**` (dev) ou `<URL>/auth/callback` pour l'environnement visé.
+
+Sans cela, le lien de confirmation de l'email (envoyé par Supabase lors de l'inscription) redirige vers la Site URL par défaut du dashboard et peut afficher une erreur « localhost ne répond pas » — même si le compte est bien activé en base. L'application passe en plus `emailRedirectTo` → `/auth/callback` à l'inscription : cette page valide le compte et affiche un message de bienvenue.
+
+### 6. Lancer l'app
 
 ```bash
 npm run dev

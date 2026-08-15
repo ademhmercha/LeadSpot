@@ -1,4 +1,5 @@
 ﻿import { toWhatsAppNumber } from "@/lib/whatsapp";
+import { DEFAULT_OUTREACH_MESSAGE, DEFAULT_OUTREACH_SUBJECT, personalizeMessage } from "@/lib/message";
 
 interface ContactLinksProps {
   phone: string | null;
@@ -10,26 +11,23 @@ interface ContactLinksProps {
 }
 
 /**
- * Les donnÃ©es de Geoapify proviennent d'OpenStreetMap, qui manque souvent de
- * tÃ©lÃ©phone/email pour un Ã©tablissement donnÃ©, mÃªme quand Google Maps les a
- * (la base de Google est propriÃ©taire â€” l'utiliser exigerait l'API Places
- * payante, que ce projet Ã©vite dÃ©libÃ©rÃ©ment). PlutÃ´t que de prÃ©tendre que ce
+ * Les données de Geoapify proviennent d'OpenStreetMap, qui manque souvent de
+ * téléphone/email pour un établissement donné, même quand Google Maps les a
+ * (la base de Google est propriétaire — l'utiliser exigerait l'API Places
+ * payante, que ce projet évite délibérément). Plutôt que de prétendre que ce
  * manque n'existe pas, on affiche un lien de recherche Google Maps en un clic,
- * sans clÃ©, pour que l'utilisateur vÃ©rifie lui-mÃªme et enregistre ce qu'il
- * trouve (voir l'affordance d'Ã©dition dans LeadTable).
+ * sans clé, pour que l'utilisateur vérifie lui-même et enregistre ce qu'il
+ * trouve (voir l'affordance d'édition dans LeadTable).
  */
 
 /**
  * Construit un lien mailto avec le destinataire, un objet et un message
- * prÃ©-remplis pour la prospection.
+ * pré-remplis pour la prospection.
  */
 function buildMailtoHref(email: string, name?: string, address?: string | null): string {
-  const subject = `Proposition de site web â€” ${name ?? ""}`;
+  const subject = personalizeMessage(DEFAULT_OUTREACH_SUBJECT, { name });
   const body = [
-    "Bonjour,",
-    "",
-    "Nous accompagnons les entreprises locales dans la crÃ©ation de leur site web.",
-    "Souhaitez-vous en discuter ?",
+    personalizeMessage(DEFAULT_OUTREACH_MESSAGE, { name }),
     "",
     ...[name, address].filter((v): v is string => Boolean(v)),
   ].join("\n");
@@ -44,7 +42,7 @@ export default function ContactLinks({ phone, email, siret, name, address, class
 
   return (
     <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-sm ${className}`}>
-      {!phone && !email && <p className="text-xs italic text-gray-400">Aucun contact renseignÃ©</p>}
+      {!phone && !email && <p className="text-xs italic text-gray-400">Aucun contact renseigné</p>}
 
       {phone && (
         <span className="inline-flex items-center gap-1.5">
@@ -76,7 +74,7 @@ export default function ContactLinks({ phone, email, siret, name, address, class
           {whatsapp && (
             <a
               href={`tel:${phone.replace(/\s+/g, "")}`}
-              title="Appeler ce numÃ©ro"
+              title="Appeler ce numéro"
               className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-brand-100 hover:text-brand-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-brand-900/40 dark:hover:text-brand-300"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
@@ -90,7 +88,7 @@ export default function ContactLinks({ phone, email, siret, name, address, class
       {email && (
         <a
           href={buildMailtoHref(email, name, address)}
-          title="Ã‰crire un email"
+          title="Écrire un email"
           className="inline-flex items-center gap-1 text-gray-600 transition-colors hover:text-brand-700 dark:text-gray-300 dark:hover:text-brand-400"
         >
           <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
@@ -114,7 +112,7 @@ export default function ContactLinks({ phone, email, siret, name, address, class
               clipRule="evenodd"
             />
           </svg>
-          VÃ©rifier sur Maps
+          Vérifier sur Maps
         </a>
       )}
       {siret && (

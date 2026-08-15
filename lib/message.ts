@@ -36,3 +36,14 @@ export const MESSAGE_PLACEHOLDERS: { token: string; label: string }[] = [
   { token: "{{siret}}", label: "SIRET" },
   { token: "{{category}}", label: "Catégorie" },
 ];
+
+/**
+ * Message de prospection par défaut (composeur + lien mailto rapide) :
+ * présente l'expéditeur avant la proposition de création de site web.
+ * {{name}} est remplacé par le nom du lead à l'envoi.
+ */
+export const DEFAULT_OUTREACH_MESSAGE =
+  "Bonjour,\n\nJe suis développeur web freelance et j'accompagne les commerçants et les entreprises locales dans la création de leur site internet.\n\nEn consultant les commerces de votre secteur, j'ai remarqué que {{name}} ne dispose pas encore de site web. Un site simple et moderne est aujourd'hui essentiel pour être trouvé sur Google et attirer de nouveaux clients.\n\nJe serais ravi de vous proposer une solution adaptée à votre activité et à votre budget, sans engagement. Souhaitez-vous en discuter ?";
+
+/** Objet de l'email de prospection par défaut (supporte les placeholders). */
+export const DEFAULT_OUTREACH_SUBJECT = "Un site web pour {{name}}";
