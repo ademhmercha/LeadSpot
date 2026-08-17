@@ -20,7 +20,10 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Corps de requête invalide" },
+      { status: 400 },
+    );
   }
 
   const { endpoint, p256dh, auth } = body;
@@ -28,7 +31,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Endpoint invalide" }, { status: 400 });
   }
   if (typeof p256dh !== "string" || p256dh === "") {
-    return NextResponse.json({ error: "Clé p256dh manquante" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Clé p256dh manquante" },
+      { status: 400 },
+    );
   }
   if (typeof auth !== "string" || auth === "") {
     return NextResponse.json({ error: "Clé auth manquante" }, { status: 400 });
@@ -41,7 +47,7 @@ export async function POST(req: NextRequest) {
       p256dh,
       auth,
     },
-    { onConflict: "user_id,endpoint" }
+    { onConflict: "user_id,endpoint" },
   );
 
   if (error) {

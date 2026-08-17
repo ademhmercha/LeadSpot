@@ -9,10 +9,18 @@ import type { Lead } from "@/lib/types";
 
 const MapView = dynamic(() => import("@/app/components/MapView"), {
   ssr: false,
-  loading: () => <div className="flex h-full items-center justify-center text-sm text-gray-400">Chargement de la carte...</div>,
+  loading: () => (
+    <div className="flex h-full items-center justify-center text-sm text-gray-400">
+      Chargement de la carte...
+    </div>
+  ),
 });
 
-export default function DashboardClient({ initialLeads }: { initialLeads: Lead[] }) {
+export default function DashboardClient({
+  initialLeads,
+}: {
+  initialLeads: Lead[];
+}) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [showMap, setShowMap] = useState(false);
 
@@ -30,8 +38,12 @@ export default function DashboardClient({ initialLeads }: { initialLeads: Lead[]
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Mes leads</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{leads.length} lead(s) enregistré(s)</p>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              Mes leads
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {leads.length} lead(s) enregistré(s)
+            </p>
           </div>
           <div className="flex gap-2">
             <button
@@ -59,7 +71,11 @@ export default function DashboardClient({ initialLeads }: { initialLeads: Lead[]
           </div>
         )}
 
-        <LeadTable leads={leads} onLeadUpdated={handleLeadUpdated} onLeadDeleted={handleLeadDeleted} />
+        <LeadTable
+          leads={leads}
+          onLeadUpdated={handleLeadUpdated}
+          onLeadDeleted={handleLeadDeleted}
+        />
       </main>
     </div>
   );

@@ -9,12 +9,15 @@
  */
 export function personalizeMessage(
   message: string,
-  vars: Record<string, string | null | undefined>
+  vars: Record<string, string | null | undefined>,
 ): string {
-  return message.replace(/\{\{\s*([a-zA-Z_]+)\s*\}\}/g, (match, key: string) => {
-    if (!(key in vars)) return match;
-    return vars[key] ?? "";
-  });
+  return message.replace(
+    /\{\{\s*([a-zA-Z_]+)\s*\}\}/g,
+    (match, key: string) => {
+      if (!(key in vars)) return match;
+      return vars[key] ?? "";
+    },
+  );
 }
 
 export function escapeHtml(value: string): string {

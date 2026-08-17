@@ -19,7 +19,8 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     .delete()
     .eq("id", params.id)
     .eq("user_id", user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }

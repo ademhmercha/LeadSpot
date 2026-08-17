@@ -16,7 +16,8 @@ export async function GET() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ zones: data });
 }
 
@@ -32,8 +33,17 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { category, zoneLabel, lat, lon, radiusKm } = body;
 
-  if (!category || !zoneLabel || lat === undefined || lon === undefined || !radiusKm) {
-    return NextResponse.json({ error: "Paramètres invalides" }, { status: 400 });
+  if (
+    !category ||
+    !zoneLabel ||
+    lat === undefined ||
+    lon === undefined ||
+    !radiusKm
+  ) {
+    return NextResponse.json(
+      { error: "Paramètres invalides" },
+      { status: 400 },
+    );
   }
 
   const { data, error } = await supabase
@@ -49,6 +59,7 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ zone: data });
 }

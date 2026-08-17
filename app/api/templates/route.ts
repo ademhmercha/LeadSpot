@@ -22,10 +22,12 @@ export async function GET(req: NextRequest) {
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
-  if (channel === "email" || channel === "whatsapp") query = query.eq("channel", channel);
+  if (channel === "email" || channel === "whatsapp")
+    query = query.eq("channel", channel);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ templates: data });
 }
@@ -43,13 +45,19 @@ export async function POST(req: NextRequest) {
   const { name, channel, subject, message } = body;
 
   if (typeof name !== "string" || !name.trim()) {
-    return NextResponse.json({ error: "Le nom du modèle est requis" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Le nom du modèle est requis" },
+      { status: 400 },
+    );
   }
   if (!isChannel(channel)) {
     return NextResponse.json({ error: "Canal invalide" }, { status: 400 });
   }
   if (typeof message !== "string" || !message.trim()) {
-    return NextResponse.json({ error: "Le message est requis" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Le message est requis" },
+      { status: 400 },
+    );
   }
 
   const insert = {
@@ -58,7 +66,7 @@ export async function POST(req: NextRequest) {
     channel,
     subject:
       channel === "email" && typeof subject === "string"
-        ? (subject.trim().slice(0, 200) || null)
+        ? subject.trim().slice(0, 200) || null
         : null,
     message: message.trim().slice(0, 10000),
   };
@@ -68,7 +76,8 @@ export async function POST(req: NextRequest) {
     .insert(insert)
     .select()
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ template: data }, { status: 201 });
 }

@@ -11,7 +11,8 @@ export async function POST(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const body = await req.json();
   const leadId = typeof body?.leadId === "string" ? body.leadId : "";
@@ -22,12 +23,17 @@ export async function POST(req: NextRequest) {
     .eq("id", leadId)
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!lead) return NextResponse.json({ error: "Lead introuvable" }, { status: 404 });
+  if (!lead)
+    return NextResponse.json({ error: "Lead introuvable" }, { status: 404 });
 
   const { error: upsertError } = await supabase
     .from("audits")
-    .upsert({ user_id: user.id, lead_id: leadId }, { onConflict: "lead_id", ignoreDuplicates: true });
-  if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 500 });
+    .upsert(
+      { user_id: user.id, lead_id: leadId },
+      { onConflict: "lead_id", ignoreDuplicates: true },
+    );
+  if (upsertError)
+    return NextResponse.json({ error: upsertError.message }, { status: 500 });
 
   const { data: audit } = await supabase
     .from("audits")
@@ -45,10 +51,12 @@ export async function GET(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const leadId = new URL(req.url).searchParams.get("lead_id") ?? "";
-  if (!leadId) return NextResponse.json({ error: "lead_id requis" }, { status: 400 });
+  if (!leadId)
+    return NextResponse.json({ error: "lead_id requis" }, { status: 400 });
 
   const { data: audit } = await supabase
     .from("audits")

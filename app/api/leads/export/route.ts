@@ -24,11 +24,16 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
 
-  let query = supabase.from("leads").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+  let query = supabase
+    .from("leads")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
   const leads = (data ?? []) as Lead[];
   const header = [
@@ -58,7 +63,7 @@ export async function GET(req: NextRequest) {
       csvEscape(l.notes),
       csvEscape(l.search_zone),
       csvEscape(new Date(l.created_at).toLocaleDateString("fr-FR")),
-    ].join(",")
+    ].join(","),
   );
 
   const csv = [header.join(","), ...rows].join("\n");

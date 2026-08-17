@@ -11,7 +11,13 @@ type FieldResult = { ok: true; value: unknown } | { ok: false; error: string };
 
 function isValidEmail(email: string): boolean {
   const [local, domain, ...rest] = email.split("@");
-  return Boolean(local) && Boolean(domain) && rest.length === 0 && domain.includes(".") && !domain.startsWith(".");
+  return (
+    Boolean(local) &&
+    Boolean(domain) &&
+    rest.length === 0 &&
+    domain.includes(".") &&
+    !domain.startsWith(".")
+  );
 }
 
 function parseStatus(value: unknown): FieldResult {
@@ -27,15 +33,18 @@ function parseNotes(value: unknown): FieldResult {
 }
 
 function parsePhone(value: unknown): FieldResult {
-  if (typeof value !== "string") return { ok: false, error: "Téléphone invalide" };
+  if (typeof value !== "string")
+    return { ok: false, error: "Téléphone invalide" };
   const phone = value.trim();
   return { ok: true, value: phone === "" ? null : phone.slice(0, 40) };
 }
 
 function parseEmail(value: unknown): FieldResult {
-  if (typeof value !== "string") return { ok: false, error: "Adresse email invalide" };
+  if (typeof value !== "string")
+    return { ok: false, error: "Adresse email invalide" };
   const email = value.trim();
-  if (email !== "" && !isValidEmail(email)) return { ok: false, error: "Adresse email invalide" };
+  if (email !== "" && !isValidEmail(email))
+    return { ok: false, error: "Adresse email invalide" };
   return { ok: true, value: email === "" ? null : email.slice(0, 200) };
 }
 
@@ -53,7 +62,9 @@ const FIELD_PARSERS: Record<string, (value: unknown) => FieldResult> = {
  * themselves (e.g. on Google Maps) when Geoapify's OSM-derived data has
  * none for that establishment.
  */
-function buildLeadUpdate(body: Record<string, unknown>): { update: Record<string, unknown> } | { error: string } {
+function buildLeadUpdate(
+  body: Record<string, unknown>,
+): { update: Record<string, unknown> } | { error: string } {
   const update: Record<string, unknown> = {};
 
   for (const [field, parse] of Object.entries(FIELD_PARSERS)) {
@@ -83,7 +94,10 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const { update } = result;
 
   if (Object.keys(update).length === 0) {
-    return NextResponse.json({ error: "Aucune modification fournie" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Aucune modification fournie" },
+      { status: 400 },
+    );
   }
 
   const { data: before } = await supabase
@@ -101,10 +115,16 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     .select()
     .maybeSingle();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!data) return NextResponse.json({ error: "Lead introuvable" }, { status: 404 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data)
+    return NextResponse.json({ error: "Lead introuvable" }, { status: 404 });
 
-  if (update.status !== undefined && before && before.status !== update.status) {
+  if (
+    update.status !== undefined &&
+    before &&
+    before.status !== update.status
+  ) {
     await recordLeadEvent(supabase, {
       userId: user.id,
       leadId: params.id,
@@ -125,8 +145,13 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  const { error } = await supabase.from("leads").delete().eq("id", params.id).eq("user_id", user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const { error } = await supabase
+    .from("leads")
+    .delete()
+    .eq("id", params.id)
+    .eq("user_id", user.id);
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }

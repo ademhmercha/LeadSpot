@@ -1,9 +1,5 @@
 export type LeadStatus =
-  | "nouveau"
-  | "contacte"
-  | "interesse"
-  | "converti"
-  | "pas_interesse";
+  "nouveau" | "contacte" | "interesse" | "converti" | "pas_interesse";
 
 export const LEAD_STATUSES: LeadStatus[] = [
   "nouveau",
@@ -68,7 +64,8 @@ export interface MessageTemplate {
   updated_at: string;
 }
 
-export type LeadEventType = "created" | "status_changed" | "sent" | "opened" | "merged";
+export type LeadEventType =
+  "created" | "status_changed" | "sent" | "opened" | "merged";
 
 export interface LeadEvent {
   id: string;

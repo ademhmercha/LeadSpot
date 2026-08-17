@@ -36,14 +36,23 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (lead && !lead.email_opened_at) {
-    const patch: Record<string, unknown> = { email_opened_at: new Date().toISOString() };
+    const patch: Record<string, unknown> = {
+      email_opened_at: new Date().toISOString(),
+    };
     if (lead.status === "contacte") patch.status = "interesse";
     await admin.from("leads").update(patch).eq("id", leadId);
-    await recordLeadEvent(admin, { userId: lead.user_id, leadId, type: "opened" });
+    await recordLeadEvent(admin, {
+      userId: lead.user_id,
+      leadId,
+      type: "opened",
+    });
   }
 
   return new NextResponse(trackingPixelBody(), {
     status: 200,
-    headers: { "Content-Type": TRACKING_PIXEL_CONTENT_TYPE, "Cache-Control": "no-store" },
+    headers: {
+      "Content-Type": TRACKING_PIXEL_CONTENT_TYPE,
+      "Cache-Control": "no-store",
+    },
   });
 }

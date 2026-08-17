@@ -2,7 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Lead, MessageTemplate } from "@/lib/types";
-import { MESSAGE_PLACEHOLDERS, DEFAULT_OUTREACH_MESSAGE, DEFAULT_OUTREACH_SUBJECT, personalizeMessage } from "@/lib/message";
+import {
+  MESSAGE_PLACEHOLDERS,
+  DEFAULT_OUTREACH_MESSAGE,
+  DEFAULT_OUTREACH_SUBJECT,
+  personalizeMessage,
+} from "@/lib/message";
 import { toWhatsAppNumber } from "@/lib/whatsapp";
 
 type Channel = "email" | "whatsapp";
@@ -23,7 +28,11 @@ interface SendResponse {
 const DEFAULT_EMAIL_SUBJECT = DEFAULT_OUTREACH_SUBJECT;
 const DEFAULT_MESSAGE = DEFAULT_OUTREACH_MESSAGE;
 
-export default function MessageComposer({ leads, onClose, onSent }: MessageComposerProps) {
+export default function MessageComposer({
+  leads,
+  onClose,
+  onSent,
+}: MessageComposerProps) {
   const [channel, setChannel] = useState<Channel>("email");
   const [subject, setSubject] = useState(DEFAULT_EMAIL_SUBJECT);
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
@@ -258,7 +267,9 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
 
             {channel === "email" && (
               <div className="mb-3">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Objet</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Objet
+                </label>
                 <input
                   type="text"
                   value={subject}
@@ -269,7 +280,9 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
             )}
 
             <div className="mb-3">
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Modèle</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Modèle
+              </label>
               <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={templateSel}
@@ -315,7 +328,9 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
                   <button
                     type="button"
                     onClick={saveTemplate}
-                    disabled={savingTemplate || !templateName.trim() || !message.trim()}
+                    disabled={
+                      savingTemplate || !templateName.trim() || !message.trim()
+                    }
                     className="shrink-0 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-brand-700 disabled:opacity-60"
                   >
                     {savingTemplate ? "Sauvegarde..." : "Enregistrer"}
@@ -323,12 +338,16 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
                 </div>
               )}
               {templateError && (
-                <p className="animate-fade-in-up mt-1.5 text-xs text-red-600 dark:text-red-400">{templateError}</p>
+                <p className="animate-fade-in-up mt-1.5 text-xs text-red-600 dark:text-red-400">
+                  {templateError}
+                </p>
               )}
             </div>
 
             <div className="mb-1">
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Message</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Message
+              </label>
               <textarea
                 ref={textareaRef}
                 value={message}
@@ -337,7 +356,9 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
                 className={inputClass}
               />
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-gray-400 dark:text-gray-500">Insérer :</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  Insérer :
+                </span>
                 {MESSAGE_PLACEHOLDERS.map((p) => (
                   <button
                     key={p.token}
@@ -356,8 +377,8 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
               <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                    Relecture — {recipients.length} destinataire{recipients.length > 1 ? "s" : ""} (message
-                    personnalisé)
+                    Relecture — {recipients.length} destinataire
+                    {recipients.length > 1 ? "s" : ""} (message personnalisé)
                   </p>
                   {overrideCount > 0 && (
                     <button
@@ -377,7 +398,8 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
                     const lead = leads.find((l) => l.id === r.id)!;
                     const isEditing = editingId === lead.id;
                     const final = finalMessageFor(lead);
-                    const waNumber = channel === "whatsapp" ? toWhatsAppNumber(r.value) : null;
+                    const waNumber =
+                      channel === "whatsapp" ? toWhatsAppNumber(r.value) : null;
                     return (
                       <li
                         key={r.id}
@@ -386,7 +408,9 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
                         <div className="flex items-center justify-between gap-2">
                           <p className="truncate text-xs font-medium text-gray-700 dark:text-gray-200">
                             {lead.name}
-                            <span className="ml-1 font-normal text-gray-400 dark:text-gray-500">({r.value})</span>
+                            <span className="ml-1 font-normal text-gray-400 dark:text-gray-500">
+                              ({r.value})
+                            </span>
                           </p>
                           <div className="flex shrink-0 items-center gap-2">
                             {channel === "whatsapp" && waNumber && (
@@ -401,7 +425,9 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
                             )}
                             <button
                               type="button"
-                              onClick={() => setEditingId(isEditing ? null : lead.id)}
+                              onClick={() =>
+                                setEditingId(isEditing ? null : lead.id)
+                              }
                               className="text-xs font-medium text-gray-500 transition-colors hover:text-brand-700 dark:text-gray-400 dark:hover:text-brand-400"
                             >
                               {isEditing ? "Fermer" : "Éditer"}
@@ -411,12 +437,19 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
                         {isEditing ? (
                           <textarea
                             value={final}
-                            onChange={(e) => setOverrides((prev) => ({ ...prev, [lead.id]: e.target.value }))}
+                            onChange={(e) =>
+                              setOverrides((prev) => ({
+                                ...prev,
+                                [lead.id]: e.target.value,
+                              }))
+                            }
                             rows={4}
                             className={`${inputClass} mt-2`}
                           />
                         ) : (
-                          <p className="mt-1 whitespace-pre-wrap text-xs text-gray-600 dark:text-gray-400">{final}</p>
+                          <p className="mt-1 whitespace-pre-wrap text-xs text-gray-600 dark:text-gray-400">
+                            {final}
+                          </p>
                         )}
                       </li>
                     );
@@ -425,11 +458,18 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
               </div>
             )}
 
-            {error && <p className="animate-fade-in-up mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+            {error && (
+              <p className="animate-fade-in-up mb-3 text-sm text-red-600 dark:text-red-400">
+                {error}
+              </p>
+            )}
             {recipients.length === 0 && (
               <p className="mb-3 text-sm text-amber-600 dark:text-amber-400">
                 Aucun lead sélectionné ne dispose{" "}
-                {channel === "email" ? "d'une adresse email" : "d'un numéro WhatsApp"}.
+                {channel === "email"
+                  ? "d'une adresse email"
+                  : "d'un numéro WhatsApp"}
+                .
               </p>
             )}
 
@@ -449,10 +489,14 @@ export default function MessageComposer({ leads, onClose, onSent }: MessageCompo
           <div className="animate-fade-in-up space-y-3">
             <p className="text-sm text-gray-700 dark:text-gray-300">
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                {result.sent} envoi{result.sent > 1 ? "s" : ""} réussi{result.sent > 1 ? "s" : ""}
+                {result.sent} envoi{result.sent > 1 ? "s" : ""} réussi
+                {result.sent > 1 ? "s" : ""}
               </span>
               {result.skipped > 0 && (
-                <span className="text-gray-500"> — {result.skipped} sans coordonnée ou en échec</span>
+                <span className="text-gray-500">
+                  {" "}
+                  — {result.skipped} sans coordonnée ou en échec
+                </span>
               )}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500">

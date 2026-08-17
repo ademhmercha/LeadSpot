@@ -29,7 +29,11 @@ interface LeadTableProps {
   onLeadDeleted: (id: string) => void;
 }
 
-export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadTableProps) {
+export default function LeadTable({
+  leads,
+  onLeadUpdated,
+  onLeadDeleted,
+}: LeadTableProps) {
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
   const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
   const [search, setSearch] = useState("");
@@ -41,22 +45,32 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
   const [composerOpen, setComposerOpen] = useState(false);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
-  const withContacts = useMemo(() => leads.filter((l) => l.phone || l.email).length, [leads]);
+  const withContacts = useMemo(
+    () => leads.filter((l) => l.phone || l.email).length,
+    [leads],
+  );
 
   const filtered = useMemo(() => {
     let rows = leads;
-    if (statusFilter !== "all") rows = rows.filter((l) => l.status === statusFilter);
+    if (statusFilter !== "all")
+      rows = rows.filter((l) => l.status === statusFilter);
     if (contactFilter === "any") rows = rows.filter((l) => l.phone || l.email);
     if (contactFilter === "email") rows = rows.filter((l) => l.email);
     if (contactFilter === "whatsapp") rows = rows.filter((l) => hasWhatsApp(l));
     if (search.trim()) {
       const q = search.toLowerCase();
-      rows = rows.filter((l) => l.name.toLowerCase().includes(q) || (l.address ?? "").toLowerCase().includes(q));
+      rows = rows.filter(
+        (l) =>
+          l.name.toLowerCase().includes(q) ||
+          (l.address ?? "").toLowerCase().includes(q),
+      );
     }
     return [...rows].sort((a, b) => {
       if (sortKey === "name") return a.name.localeCompare(b.name);
       if (sortKey === "status") return a.status.localeCompare(b.status);
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     });
   }, [leads, statusFilter, contactFilter, search, sortKey]);
 
@@ -70,13 +84,21 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
 
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const selectable = useMemo(() => filtered.filter((l) => l.phone || l.email), [filtered]);
-  const allSelected = selectable.length > 0 && selectable.every((l) => selectedIds.has(l.id));
+  const selectable = useMemo(
+    () => filtered.filter((l) => l.phone || l.email),
+    [filtered],
+  );
+  const allSelected =
+    selectable.length > 0 && selectable.every((l) => selectedIds.has(l.id));
   const someSelected = selectable.some((l) => selectedIds.has(l.id));
-  const selectedLeads = useMemo(() => leads.filter((l) => selectedIds.has(l.id)), [leads, selectedIds]);
+  const selectedLeads = useMemo(
+    () => leads.filter((l) => selectedIds.has(l.id)),
+    [leads, selectedIds],
+  );
 
   useEffect(() => {
-    if (selectAllRef.current) selectAllRef.current.indeterminate = someSelected && !allSelected;
+    if (selectAllRef.current)
+      selectAllRef.current.indeterminate = someSelected && !allSelected;
   }, [someSelected, allSelected]);
 
   function toggleSelect(id: string) {
@@ -109,11 +131,15 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
     });
     sentLeadIds.forEach((id) => {
       const lead = leads.find((l) => l.id === id);
-      if (lead && lead.status !== "contacte") onLeadUpdated({ ...lead, status: "contacte" });
+      if (lead && lead.status !== "contacte")
+        onLeadUpdated({ ...lead, status: "contacte" });
     });
   }
 
-  async function updateLead(id: string, patch: Partial<Pick<Lead, "status" | "notes" | "phone" | "email">>) {
+  async function updateLead(
+    id: string,
+    patch: Partial<Pick<Lead, "status" | "notes" | "phone" | "email">>,
+  ) {
     setSavingId(id);
     try {
       const res = await fetch(`/api/leads/${id}`, {
@@ -211,31 +237,34 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
         </div>
       </div>
 
-        {selectedIds.size > 0 && (
-          <div className="animate-fade-in-up flex flex-wrap items-center justify-between gap-2 rounded-lg bg-brand-50 p-2 dark:bg-brand-900/30">
-            <span className="text-sm font-medium text-brand-700 dark:text-brand-300">
-              {selectedIds.size} lead{selectedIds.size > 1 ? "s" : ""} sélectionné{selectedIds.size > 1 ? "s" : ""}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSelectedIds(new Set())}
-                className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-white/60 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-              >
-                Désélectionner
-              </button>
-              <button
-                onClick={() => setComposerOpen(true)}
-                className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-brand-700 active:scale-[0.98]"
-              >
-                Envoyer un message
-              </button>
-            </div>
+      {selectedIds.size > 0 && (
+        <div className="animate-fade-in-up flex flex-wrap items-center justify-between gap-2 rounded-lg bg-brand-50 p-2 dark:bg-brand-900/30">
+          <span className="text-sm font-medium text-brand-700 dark:text-brand-300">
+            {selectedIds.size} lead{selectedIds.size > 1 ? "s" : ""} sélectionné
+            {selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-white/60 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+            >
+              Désélectionner
+            </button>
+            <button
+              onClick={() => setComposerOpen(true)}
+              className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-brand-700 active:scale-[0.98]"
+            >
+              Envoyer un message
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
       <ul className="divide-y divide-gray-100 dark:divide-gray-800">
         {filtered.length === 0 && (
-          <li className="p-6 text-center text-sm text-gray-400 dark:text-gray-500">Aucun lead à afficher.</li>
+          <li className="p-6 text-center text-sm text-gray-400 dark:text-gray-500">
+            Aucun lead à afficher.
+          </li>
         )}
 
         {paginated.map((lead, i) => (
@@ -251,27 +280,36 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
                   checked={selectedIds.has(lead.id)}
                   disabled={!lead.phone && !lead.email}
                   onChange={() => toggleSelect(lead.id)}
-                  title={!lead.phone && !lead.email ? "Aucune coordonnée — non sélectionnable" : "Sélectionner"}
+                  title={
+                    !lead.phone && !lead.email
+                      ? "Aucune coordonnée — non sélectionnable"
+                      : "Sélectionner"
+                  }
                   className="mt-1 h-4 w-4 rounded border-gray-300 text-brand-600 transition-colors focus:ring-brand-500 disabled:opacity-40 dark:border-gray-600"
                 />
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-gray-800 dark:text-gray-100">{lead.name}</p>
-                  {contactCount(lead) > 0 && (
-                    <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      {contactCount(lead)} coordonnée{contactCount(lead) > 1 ? "s" : ""}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{lead.address}</p>
-                <ContactLinks
-                  phone={lead.phone}
-                  email={lead.email}
-                  siret={lead.siret}
-                  name={lead.name}
-                  address={lead.address}
-                  className="mt-1"
-                />
+                    <p className="font-medium text-gray-800 dark:text-gray-100">
+                      {lead.name}
+                    </p>
+                    {contactCount(lead) > 0 && (
+                      <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        {contactCount(lead)} coordonnée
+                        {contactCount(lead) > 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {lead.address}
+                  </p>
+                  <ContactLinks
+                    phone={lead.phone}
+                    email={lead.email}
+                    siret={lead.siret}
+                    name={lead.name}
+                    address={lead.address}
+                    className="mt-1"
+                  />
                 </div>
               </div>
 
@@ -279,7 +317,11 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
                 <select
                   value={lead.status}
                   disabled={savingId === lead.id}
-                  onChange={(e) => updateLead(lead.id, { status: e.target.value as LeadStatus })}
+                  onChange={(e) =>
+                    updateLead(lead.id, {
+                      status: e.target.value as LeadStatus,
+                    })
+                  }
                   className="rounded-lg border border-gray-300 px-2 py-1 text-xs transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 >
                   {LEAD_STATUSES.map((s) => (
@@ -301,10 +343,14 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
                 Fiche
               </Link>
               <button
-                onClick={() => setExpandedId(expandedId === lead.id ? null : lead.id)}
+                onClick={() =>
+                  setExpandedId(expandedId === lead.id ? null : lead.id)
+                }
                 className="font-medium text-brand-600 transition-colors hover:underline dark:text-brand-400"
               >
-                {expandedId === lead.id ? "Masquer les détails" : "Détails / contact"}
+                {expandedId === lead.id
+                  ? "Masquer les détails"
+                  : "Détails / contact"}
               </button>
               <button
                 onClick={() => deleteLead(lead.id)}
@@ -319,14 +365,16 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
-                      Téléphone {!lead.phone && "(non trouvé — complétez si connu)"}
+                      Téléphone{" "}
+                      {!lead.phone && "(non trouvé — complétez si connu)"}
                     </label>
                     <input
                       type="tel"
                       defaultValue={lead.phone ?? ""}
                       placeholder="ex : 04 78 00 00 00"
                       onBlur={(e) => {
-                        if (e.target.value.trim() !== (lead.phone ?? "")) updateLead(lead.id, { phone: e.target.value });
+                        if (e.target.value.trim() !== (lead.phone ?? ""))
+                          updateLead(lead.id, { phone: e.target.value });
                       }}
                       className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                     />
@@ -340,7 +388,8 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
                       defaultValue={lead.email ?? ""}
                       placeholder="ex : contact@..."
                       onBlur={(e) => {
-                        if (e.target.value.trim() !== (lead.email ?? "")) updateLead(lead.id, { email: e.target.value });
+                        if (e.target.value.trim() !== (lead.email ?? ""))
+                          updateLead(lead.id, { email: e.target.value });
                       }}
                       className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                     />
@@ -384,7 +433,11 @@ export default function LeadTable({ leads, onLeadUpdated, onLeadDeleted }: LeadT
       )}
 
       {composerOpen && (
-        <MessageComposer leads={selectedLeads} onClose={() => setComposerOpen(false)} onSent={handleSent} />
+        <MessageComposer
+          leads={selectedLeads}
+          onClose={() => setComposerOpen(false)}
+          onSent={handleSent}
+        />
       )}
     </div>
   );

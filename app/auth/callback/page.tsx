@@ -52,7 +52,10 @@ function CallbackContent() {
           const accessToken = params.get("access_token");
           const refreshToken = params.get("refresh_token");
           if (!accessToken || !refreshToken) {
-            setState({ status: "error", message: "Lien de vérification invalide ou expiré." });
+            setState({
+              status: "error",
+              message: "Lien de vérification invalide ou expiré.",
+            });
             return;
           }
           const { error } = await supabase.auth.setSession({
@@ -120,7 +123,11 @@ function CallbackContent() {
         {state.status === "success" && (
           <>
             <div className="mx-auto mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-emerald-600 dark:text-emerald-400">
+              <svg
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-6 w-6 text-emerald-600 dark:text-emerald-400"
+              >
                 <path
                   fillRule="evenodd"
                   d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
@@ -132,8 +139,9 @@ function CallbackContent() {
               Vérification terminée !
             </h1>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-              Bienvenue sur <strong>LeadSpot</strong>. Votre compte est activé : vous pouvez maintenant
-              explorer les établissements locaux sans site web et lancer vos prospections.
+              Bienvenue sur <strong>LeadSpot</strong>. Votre compte est activé :
+              vous pouvez maintenant explorer les établissements locaux sans
+              site web et lancer vos prospections.
             </p>
             <button
               onClick={goToDashboard}
@@ -150,7 +158,11 @@ function CallbackContent() {
         {state.status === "error" && (
           <>
             <div className="mx-auto mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/40">
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-red-600 dark:text-red-400">
+              <svg
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-6 w-6 text-red-600 dark:text-red-400"
+              >
                 <path
                   fillRule="evenodd"
                   d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z"
@@ -161,7 +173,9 @@ function CallbackContent() {
             <h1 className="mt-4 text-lg font-semibold text-gray-800 dark:text-gray-100">
               Vérification impossible
             </h1>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{state.message}</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              {state.message}
+            </p>
             <Link
               href="/login"
               className="mt-6 inline-block w-full rounded-lg border border-brand-300 px-4 py-2 text-sm font-medium text-brand-700 transition hover:bg-brand-50 dark:border-brand-500 dark:text-brand-300 dark:hover:bg-brand-900/30"

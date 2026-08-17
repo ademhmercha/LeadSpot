@@ -34,7 +34,7 @@ export function createServerSupabaseClient() {
           }
         },
       },
-    }
+    },
   );
 }
 
@@ -49,6 +49,6 @@ export function createServiceRoleClient() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
       auth: { autoRefreshToken: false, persistSession: false },
-    }
+    },
   );
 }

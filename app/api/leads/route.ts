@@ -15,14 +15,19 @@ export async function GET(req: NextRequest) {
   const category = searchParams.get("category");
   const search = searchParams.get("q");
 
-  let query = supabase.from("leads").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+  let query = supabase
+    .from("leads")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
   if (status) query = query.eq("status", status);
   if (category) query = query.eq("search_category", category);
   if (search) query = query.ilike("name", `%${search}%`);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ leads: data });
 }

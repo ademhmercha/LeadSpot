@@ -28,7 +28,17 @@ export interface StoreResult {
   merged: number;
 }
 
-type LeadLite = Pick<Lead, "id" | "place_id" | "name" | "address" | "phone" | "email" | "siret" | "website">;
+type LeadLite = Pick<
+  Lead,
+  | "id"
+  | "place_id"
+  | "name"
+  | "address"
+  | "phone"
+  | "email"
+  | "siret"
+  | "website"
+>;
 
 /** Minuscules, sans accents, sans ponctuation — pour comparer les noms. */
 function normalizeText(value: string | null | undefined): string {
@@ -61,14 +71,18 @@ function extractCity(address: string | null | undefined): string | null {
  * (même nom + même ville) mais avec un place_id différent — c'est le doublon
  * qu'on fusionne au lieu d'en créer un nouveau.
  */
-function findMergeCandidate(existingByName: LeadLite[], place: FoundPlaceRow): LeadLite | null {
+function findMergeCandidate(
+  existingByName: LeadLite[],
+  place: FoundPlaceRow,
+): LeadLite | null {
   const name = normalizeText(place.name);
   const city = extractCity(place.address);
   for (const lead of existingByName) {
     if (lead.place_id === place.place_id) continue;
     if (normalizeText(lead.name) !== name) continue;
     if (city && extractCity(lead.address) === city) return lead;
-    if (!city && normalizeText(lead.address) === normalizeText(place.address)) return lead;
+    if (!city && normalizeText(lead.address) === normalizeText(place.address))
+      return lead;
   }
   return null;
 }
@@ -79,7 +93,7 @@ async function fetchLeadsInChunks(
   userId: string,
   field: "place_id" | "name",
   values: string[],
-  select: string
+  select: string,
 ): Promise<LeadLite[]> {
   const results: LeadLite[] = [];
   const CHUNK = 100;
@@ -99,14 +113,23 @@ async function fetchLeadsInChunks(
  * fraîches trouvées par la recherche. Ne touche ni au statut, ni aux notes,
  * ni au contexte de recherche d'origine.
  */
-async function mergeMissingFields(admin: SupabaseClient, userId: string, lead: LeadLite, place: FoundPlaceRow): Promise<void> {
+async function mergeMissingFields(
+  admin: SupabaseClient,
+  userId: string,
+  lead: LeadLite,
+  place: FoundPlaceRow,
+): Promise<void> {
   const patch: Record<string, unknown> = {};
   if (!lead.phone && place.phone) patch.phone = place.phone;
   if (!lead.email && place.email) patch.email = place.email;
   if (!lead.website && place.website) patch.website = place.website;
   if (!lead.siret && place.siret) patch.siret = place.siret;
   if (Object.keys(patch).length > 0) {
-    await admin.from("leads").update(patch).eq("id", lead.id).eq("user_id", userId);
+    await admin
+      .from("leads")
+      .update(patch)
+      .eq("id", lead.id)
+      .eq("user_id", userId);
   }
 }
 
@@ -125,7 +148,7 @@ async function mergeMissingFields(admin: SupabaseClient, userId: string, lead: L
 export async function storeFoundPlaces(
   admin: SupabaseClient,
   userId: string,
-  places: FoundPlaceRow[]
+  places: FoundPlaceRow[],
 ): Promise<StoreResult> {
   const contactable = places.filter((p) => Boolean(p.phone || p.email));
   if (contactable.length === 0) return { leads: [], inserted: 0, merged: 0 };
@@ -135,7 +158,7 @@ export async function storeFoundPlaces(
     userId,
     "place_id",
     contactable.map((p) => p.place_id),
-    "*"
+    "*",
   );
   const byPlaceId = new Map(existingByPlaceId.map((l) => [l.place_id, l]));
   const newPlaces = contactable.filter((p) => !byPlaceId.has(p.place_id));
@@ -146,15 +169,16 @@ export async function storeFoundPlaces(
     if (existing) await mergeMissingFields(admin, userId, existing, place);
   }
 
-  const existingByName = newPlaces.length > 0
-    ? await fetchLeadsInChunks(
-        admin,
-        userId,
-        "name",
-        [...new Set(newPlaces.map((p) => p.name))],
-        "*"
-      )
-    : [];
+  const existingByName =
+    newPlaces.length > 0
+      ? await fetchLeadsInChunks(
+          admin,
+          userId,
+          "name",
+          [...new Set(newPlaces.map((p) => p.name))],
+          "*",
+        )
+      : [];
 
   const toInsert: FoundPlaceRow[] = [];
   let merged = 0;
@@ -186,7 +210,11 @@ export async function storeFoundPlaces(
     if (error) throw error;
 
     for (const lead of (data ?? []) as Lead[]) {
-      await recordLeadEvent(admin, { userId, leadId: lead.id, type: "created" });
+      await recordLeadEvent(admin, {
+        userId,
+        leadId: lead.id,
+        type: "created",
+      });
     }
     insertedLeads.push(...((data ?? []) as Lead[]));
   }
@@ -197,10 +225,16 @@ export async function storeFoundPlaces(
   const allLeads = new Map<string, Lead>();
   for (const l of existingByPlaceId as unknown as Lead[]) {
     const place = byPlaceId.get(l.place_id);
-    const nowContactable = Boolean(l.phone || l.email || place?.phone || place?.email);
+    const nowContactable = Boolean(
+      l.phone || l.email || place?.phone || place?.email,
+    );
     if (nowContactable) allLeads.set(l.id, l);
   }
   for (const l of insertedLeads) allLeads.set(l.id, l);
 
-  return { leads: [...allLeads.values()], inserted: insertedLeads.length, merged };
+  return {
+    leads: [...allLeads.values()],
+    inserted: insertedLeads.length,
+    merged,
+  };
 }

@@ -19,13 +19,19 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
  */
 export default function PushSetup() {
   const [supported, setSupported] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [permission, setPermission] = useState<
+    NotificationPermission | "unsupported"
+  >("unsupported");
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function refreshStatus() {
-    if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    if (
+      typeof window === "undefined" ||
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window)
+    ) {
       setSupported(false);
       return;
     }
@@ -51,16 +57,22 @@ export default function PushSetup() {
       const permission = await Notification.requestPermission();
       setPermission(permission);
       if (permission !== "granted") {
-        setError("Permission refusée. Autorisez les notifications dans les réglages de votre appareil.");
+        setError(
+          "Permission refusée. Autorisez les notifications dans les réglages de votre appareil.",
+        );
         return;
       }
 
       const registration = await navigator.serviceWorker.ready;
       const existing = await registration.pushManager.getSubscription();
-      const subscription = existing ?? (await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""),
-      }));
+      const subscription =
+        existing ??
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(
+            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "",
+          ),
+        }));
 
       if (!subscription) {
         setError("Impossible de créer l'abonnement push.");
@@ -86,7 +98,9 @@ export default function PushSetup() {
 
       setSubscribed(true);
     } catch {
-      setError("Une erreur est survenue lors de l'activation des notifications.");
+      setError(
+        "Une erreur est survenue lors de l'activation des notifications.",
+      );
     } finally {
       setLoading(false);
     }
@@ -108,7 +122,9 @@ export default function PushSetup() {
       }
       setSubscribed(false);
     } catch {
-      setError("Une erreur est survenue lors de la désactivation des notifications.");
+      setError(
+        "Une erreur est survenue lors de la désactivation des notifications.",
+      );
     } finally {
       setLoading(false);
     }
@@ -118,9 +134,15 @@ export default function PushSetup() {
 
   return (
     <section className="mt-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:p-6 dark:bg-gray-900 dark:ring-gray-800">
-      <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Notifications push</h2>
+      <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+        Notifications push
+      </h2>
 
-      {error && <p className="animate-fade-in-up mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && (
+        <p className="animate-fade-in-up mt-2 text-sm text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
 
       <button
         onClick={subscribed ? handleDisable : handleEnable}

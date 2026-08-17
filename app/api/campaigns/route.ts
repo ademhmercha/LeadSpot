@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server";
+import {
+  createServerSupabaseClient,
+  createServiceRoleClient,
+} from "@/lib/supabase-server";
 import { sendOutreachEmail } from "@/lib/resend";
 import { escapeHtml, personalizeMessage } from "@/lib/message";
 import { appendOpenTrackingPixel } from "@/lib/tracking";
@@ -37,7 +40,10 @@ function buildEmailHtml(message: string, lead: Lead): string {
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;line-height:1.5">
       ${message
         .split(/\n{2,}/)
-        .map((p) => `<p style="margin:0 0 14px;white-space:pre-wrap">${escapeHtml(p)}</p>`)
+        .map(
+          (p) =>
+            `<p style="margin:0 0 14px;white-space:pre-wrap">${escapeHtml(p)}</p>`,
+        )
         .join("")}
       <p style="margin-top:24px;color:#888;font-size:12px">— ${escapeHtml(lead.name)}${lead.address ? `, ${escapeHtml(lead.address)}` : ""}</p>
     </div>
@@ -65,21 +71,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Canal invalide" }, { status: 400 });
   }
   if (recipients.length === 0) {
-    return NextResponse.json({ error: "Aucun lead sélectionné" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Aucun lead sélectionné" },
+      { status: 400 },
+    );
   }
   if (recipients.length > MAX_RECIPIENTS) {
     return NextResponse.json(
       { error: `Limite de ${MAX_RECIPIENTS} destinataires par envoi` },
-      { status: 400 }
+      { status: 400 },
     );
   }
   if (
     channel === "email" &&
-    (!subject || recipients.some((r) => typeof r.message !== "string" || !r.message.trim()))
+    (!subject ||
+      recipients.some(
+        (r) => typeof r.message !== "string" || !r.message.trim(),
+      ))
   ) {
     return NextResponse.json(
       { error: "L'objet et le message sont requis pour un envoi par email" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -90,7 +102,8 @@ export async function POST(req: NextRequest) {
     .in("id", leadIds)
     .eq("user_id", user.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   const leads = (data ?? []) as Lead[];
   if (leads.length === 0) {
     return NextResponse.json({ error: "Aucun lead trouvé" }, { status: 404 });
@@ -108,13 +121,23 @@ export async function POST(req: NextRequest) {
       .update({ status: "contacte" })
       .in("id", leadIds)
       .eq("user_id", user.id);
-    if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+    if (updateError)
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
 
     const admin = createServiceRoleClient();
     for (const lead of leads) {
-      await recordLeadEvent(admin, { userId: user.id, leadId: lead.id, type: "sent", metadata: { channel } });
+      await recordLeadEvent(admin, {
+        userId: user.id,
+        leadId: lead.id,
+        type: "sent",
+        metadata: { channel },
+      });
     }
-    return NextResponse.json({ sent: leadIds.length, skipped: 0, sentLeadIds: leadIds });
+    return NextResponse.json({
+      sent: leadIds.length,
+      skipped: 0,
+      sentLeadIds: leadIds,
+    });
   }
 
   // ---------------------------------------------------------------
@@ -138,9 +161,18 @@ export async function POST(req: NextRequest) {
     const personalSubject = personalizeForLead(subject, lead);
     const personalMessage = personalizeForLead(entry.message, lead);
     try {
-      await sendOutreachEmail({ to: lead.email, subject: personalSubject, html: buildEmailHtml(personalMessage, lead) });
+      await sendOutreachEmail({
+        to: lead.email,
+        subject: personalSubject,
+        html: buildEmailHtml(personalMessage, lead),
+      });
       sentIds.push(entry.leadId);
-      await recordLeadEvent(admin, { userId: user.id, leadId: lead.id, type: "sent", metadata: { channel } });
+      await recordLeadEvent(admin, {
+        userId: user.id,
+        leadId: lead.id,
+        type: "sent",
+        metadata: { channel },
+      });
     } catch {
       failures.push(entry.leadId);
     }
@@ -155,8 +187,13 @@ export async function POST(req: NextRequest) {
       .update({ status: "contacte" })
       .in("id", sentLeadIds)
       .eq("user_id", user.id);
-    if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+    if (updateError)
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ sent, skipped: skippedIds.length + failures.length, sentLeadIds });
+  return NextResponse.json({
+    sent,
+    skipped: skippedIds.length + failures.length,
+    sentLeadIds,
+  });
 }

@@ -12,7 +12,9 @@ const REVERSE_GEOCODE_URL = "https://api.geoapify.com/v1/geocode/reverse";
 const SOCIAL_ONLY_DOMAIN_RE =
   /^(https?:\/\/)?(www\.)?(facebook\.com|instagram\.com|m\.facebook\.com|business\.facebook\.com)\//i;
 
-export function isSocialOnlyOrMissing(website: string | null | undefined): boolean {
+export function isSocialOnlyOrMissing(
+  website: string | null | undefined,
+): boolean {
   if (!website || website.trim() === "") return true;
   return SOCIAL_ONLY_DOMAIN_RE.test(website.trim());
 }
@@ -34,7 +36,10 @@ export const BUSINESS_CATEGORIES: { value: string; label: string }[] = [
   { value: "commercial.food_and_drink.butcher", label: "Boucheries" },
   { value: "commercial.florist", label: "Fleuristes" },
   { value: "service.vehicle.repair", label: "Garages automobiles" },
-  { value: "commercial.gift_and_souvenir", label: "Boutiques cadeaux/souvenirs" },
+  {
+    value: "commercial.gift_and_souvenir",
+    label: "Boutiques cadeaux/souvenirs",
+  },
   { value: "commercial.clothing", label: "Boutiques de vêtements" },
   { value: "healthcare.dentist", label: "Cabinets dentaires" },
   { value: "healthcare.clinic_or_praxis", label: "Cabinets médicaux" },
@@ -49,7 +54,9 @@ interface GeocodeResult {
 }
 
 /** Geocode a free-text place (city, address) to coordinates via Geoapify. */
-export async function geocodeZone(query: string): Promise<GeocodeResult | null> {
+export async function geocodeZone(
+  query: string,
+): Promise<GeocodeResult | null> {
   const apiKey = process.env.GEOAPIFY_API_KEY;
   if (!apiKey) throw new Error("GEOAPIFY_API_KEY is not set");
 
@@ -60,7 +67,9 @@ export async function geocodeZone(query: string): Promise<GeocodeResult | null> 
 
   const res = await fetch(url.toString());
   if (!res.ok) {
-    throw new Error(`Geoapify geocoding failed: ${res.status} ${res.statusText}`);
+    throw new Error(
+      `Geoapify geocoding failed: ${res.status} ${res.statusText}`,
+    );
   }
   const data = await res.json();
   const feature = data?.features?.[0];
@@ -75,7 +84,10 @@ export async function geocodeZone(query: string): Promise<GeocodeResult | null> 
  * into a human-readable label, so a GPS-based search still gets a nice
  * `search_zone` value instead of raw "lat,lon".
  */
-export async function reverseGeocodeZone(lat: number, lon: number): Promise<string | null> {
+export async function reverseGeocodeZone(
+  lat: number,
+  lon: number,
+): Promise<string | null> {
   const apiKey = process.env.GEOAPIFY_API_KEY;
   if (!apiKey) throw new Error("GEOAPIFY_API_KEY is not set");
 
@@ -104,10 +116,15 @@ function extractWebsite(props: Record<string, unknown>): string | null {
   const candidates = [
     props.website,
     (props.contact as Record<string, unknown> | undefined)?.website,
-    (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw?.website,
-    (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw?.["contact:website"],
+    (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw
+      ?.website,
+    (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw?.[
+      "contact:website"
+    ],
   ];
-  const found = candidates.find((c) => typeof c === "string" && c.trim() !== "");
+  const found = candidates.find(
+    (c) => typeof c === "string" && c.trim() !== "",
+  );
   return (found as string | undefined) ?? null;
 }
 
@@ -115,9 +132,12 @@ function extractPhone(props: Record<string, unknown>): string | null {
   const candidates = [
     props.phone,
     (props.contact as Record<string, unknown> | undefined)?.phone,
-    (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw?.phone,
+    (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw
+      ?.phone,
   ];
-  const found = candidates.find((c) => typeof c === "string" && c.trim() !== "");
+  const found = candidates.find(
+    (c) => typeof c === "string" && c.trim() !== "",
+  );
   return (found as string | undefined) ?? null;
 }
 
@@ -125,10 +145,15 @@ function extractEmail(props: Record<string, unknown>): string | null {
   const candidates = [
     props.email,
     (props.contact as Record<string, unknown> | undefined)?.email,
-    (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw?.email,
-    (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw?.["contact:email"],
+    (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw
+      ?.email,
+    (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw?.[
+      "contact:email"
+    ],
   ];
-  const found = candidates.find((c) => typeof c === "string" && c.trim() !== "");
+  const found = candidates.find(
+    (c) => typeof c === "string" && c.trim() !== "",
+  );
   return (found as string | undefined) ?? null;
 }
 
@@ -139,9 +164,13 @@ function extractEmail(props: Record<string, unknown>): string | null {
  * that has nothing to do with Google Places.
  */
 function extractSiret(props: Record<string, unknown>): string | null {
-  const raw = (props.datasource as { raw?: Record<string, unknown> } | undefined)?.raw;
+  const raw = (
+    props.datasource as { raw?: Record<string, unknown> } | undefined
+  )?.raw;
   const siret = raw?.["ref:FR:SIRET"];
-  return typeof siret === "string" || typeof siret === "number" ? String(siret) : null;
+  return typeof siret === "string" || typeof siret === "number"
+    ? String(siret)
+    : null;
 }
 
 /**
@@ -170,7 +199,9 @@ export async function searchPlaces({
   const res = await fetch(url.toString());
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`Geoapify places request failed: ${res.status} ${res.statusText} ${body}`);
+    throw new Error(
+      `Geoapify places request failed: ${res.status} ${res.statusText} ${body}`,
+    );
   }
   const data = await res.json();
   const features: unknown[] = data?.features ?? [];
@@ -193,7 +224,11 @@ export async function searchPlaces({
       if (Array.isArray(cats) && cats.length > 0) {
         const matches = (cats as unknown[]).some((c) => {
           if (typeof c !== "string") return false;
-          return c === category || c.startsWith(`${category}.`) || category.startsWith(`${c}.`);
+          return (
+            c === category ||
+            c.startsWith(`${category}.`) ||
+            category.startsWith(`${c}.`)
+          );
         });
         if (!matches) return null;
       }

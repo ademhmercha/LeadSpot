@@ -11,7 +11,7 @@ import type { NextRequest } from "next/server";
  * curl/test manually — do NOT leave them unset in production.
  */
 export async function verifyQstashSignature(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const currentSigningKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
   const nextSigningKey = process.env.QSTASH_NEXT_SIGNING_KEY;

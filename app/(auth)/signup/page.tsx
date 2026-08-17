@@ -41,12 +41,17 @@ export default function SignupPage() {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-          <h1 className="text-lg font-semibold text-brand-700 dark:text-brand-400">Vérifiez vos emails</h1>
+          <h1 className="text-lg font-semibold text-brand-700 dark:text-brand-400">
+            Vérifiez vos emails
+          </h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            Un email de confirmation a été envoyé à <strong>{email}</strong>. Cliquez sur le lien pour activer votre
-            compte.
+            Un email de confirmation a été envoyé à <strong>{email}</strong>.
+            Cliquez sur le lien pour activer votre compte.
           </p>
-          <Link href="/login" className="mt-4 inline-block text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
+          <Link
+            href="/login"
+            className="mt-4 inline-block text-sm font-medium text-brand-600 hover:underline dark:text-brand-400"
+          >
             Retour à la connexion
           </Link>
         </div>
@@ -65,8 +70,12 @@ export default function SignupPage() {
             height={48}
             className="mx-auto h-12 w-12 rounded-xl"
           />
-          <h1 className="mt-2 text-2xl font-bold text-brand-700 dark:text-brand-400">LeadSpot</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Créez votre compte gratuit</p>
+          <h1 className="mt-2 text-2xl font-bold text-brand-700 dark:text-brand-400">
+            LeadSpot
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Créez votre compte gratuit
+          </p>
         </div>
 
         <form
@@ -74,7 +83,9 @@ export default function SignupPage() {
           className="space-y-4 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800"
         >
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Email
+            </label>
             <input
               type="email"
               required
@@ -84,7 +95,9 @@ export default function SignupPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Mot de passe</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Mot de passe
+            </label>
             <input
               type="password"
               required
@@ -95,7 +108,9 @@ export default function SignupPage() {
             />
           </div>
 
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          )}
 
           <button
             type="submit"
@@ -108,7 +123,10 @@ export default function SignupPage() {
 
         <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
           Déjà un compte ?{" "}
-          <Link href="/login" className="font-medium text-brand-600 hover:underline dark:text-brand-400">
+          <Link
+            href="/login"
+            className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+          >
             Se connecter
           </Link>
         </p>

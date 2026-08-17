@@ -33,7 +33,10 @@ type ZoneMode = "ville" | "gps";
 // "Locate me" searches are precise (GPS), so a tight walking/driving radius
 // makes sense; a typed city name is an imprecise center, so it defaults
 // wider. Switching modes re-clamps the current radius into the new range.
-const RADIUS_BOUNDS: Record<ZoneMode, { min: number; max: number; default: number }> = {
+const RADIUS_BOUNDS: Record<
+  ZoneMode,
+  { min: number; max: number; default: number }
+> = {
   ville: { min: 1, max: 50, default: 5 },
   gps: { min: 1, max: 15, default: 3 },
 };
@@ -43,7 +46,10 @@ export default function SearchForm() {
   const [category, setCategory] = useState(BUSINESS_CATEGORIES[0].value);
   const [zoneMode, setZoneMode] = useState<ZoneMode>("ville");
   const [zoneQuery, setZoneQuery] = useState("");
-  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [gpsCoords, setGpsCoords] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
   const [radiusKm, setRadiusKm] = useState(RADIUS_BOUNDS.ville.default);
@@ -61,25 +67,30 @@ export default function SearchForm() {
 
   function handleLocateMe() {
     if (!navigator.geolocation) {
-      setLocateError("La géolocalisation n'est pas disponible sur cet appareil.");
+      setLocateError(
+        "La géolocalisation n'est pas disponible sur cet appareil.",
+      );
       return;
     }
     setLocating(true);
     setLocateError(null);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setGpsCoords({ lat: position.coords.latitude, lon: position.coords.longitude });
+        setGpsCoords({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        });
         setLocating(false);
       },
       (err) => {
         setLocateError(
           err.code === err.PERMISSION_DENIED
             ? "Localisation refusée. Autorisez l'accès à votre position, ou passez en recherche par ville."
-            : "Impossible de récupérer votre position."
+            : "Impossible de récupérer votre position.",
         );
         setLocating(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000 },
     );
   }
 
@@ -122,7 +133,13 @@ export default function SearchForm() {
       const res = await fetch("/api/saved-zones", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, zoneLabel: result.zoneLabel, lat: result.lat, lon: result.lon, radiusKm }),
+        body: JSON.stringify({
+          category,
+          zoneLabel: result.zoneLabel,
+          lat: result.lat,
+          lon: result.lon,
+          radiusKm,
+        }),
       });
       if (res.ok) setZoneSaved(true);
     } finally {
@@ -131,7 +148,8 @@ export default function SearchForm() {
   }
 
   const bounds = RADIUS_BOUNDS[zoneMode];
-  const canSubmit = zoneMode === "ville" ? zoneQuery.trim().length > 0 : gpsCoords !== null;
+  const canSubmit =
+    zoneMode === "ville" ? zoneQuery.trim().length > 0 : gpsCoords !== null;
 
   return (
     <div className="space-y-6">
@@ -157,7 +175,9 @@ export default function SearchForm() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Zone de recherche</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Zone de recherche
+          </label>
           <div className="mb-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
             <button
               type="button"
@@ -200,21 +220,32 @@ export default function SearchForm() {
                 disabled={locating}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-all duration-150 hover:border-brand-300 hover:bg-brand-50 disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:border-brand-400 dark:hover:bg-brand-900/30"
               >
-                <svg viewBox="0 0 20 20" fill="currentColor" className={`h-4 w-4 ${locating ? "animate-pulse" : ""}`}>
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className={`h-4 w-4 ${locating ? "animate-pulse" : ""}`}
+                >
                   <path
                     fillRule="evenodd"
                     d="M10 2a1 1 0 0 1 1 1v.06a7.003 7.003 0 0 1 5.94 5.94H17a1 1 0 1 1 0 2h-.06a7.003 7.003 0 0 1-5.94 5.94V17a1 1 0 1 1-2 0v-.06A7.003 7.003 0 0 1 3.06 11H3a1 1 0 1 1 0-2h.06A7.003 7.003 0 0 1 9 3.06V3a1 1 0 0 1 1-1Zm0 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 2.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"
                     clipRule="evenodd"
                   />
                 </svg>
-                {locating ? "Localisation en cours..." : gpsCoords ? "Position détectée ✓ — relocaliser" : "Me localiser"}
+                {locating
+                  ? "Localisation en cours..."
+                  : gpsCoords
+                    ? "Position détectée ✓ — relocaliser"
+                    : "Me localiser"}
               </button>
               {locateError && (
-                <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{locateError}</p>
+                <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                  {locateError}
+                </p>
               )}
               {gpsCoords && !locateError && (
                 <p className="mt-1.5 text-xs text-green-700 dark:text-green-400">
-                  Position : {gpsCoords.lat.toFixed(4)}, {gpsCoords.lon.toFixed(4)}
+                  Position : {gpsCoords.lat.toFixed(4)},{" "}
+                  {gpsCoords.lon.toFixed(4)}
                 </p>
               )}
             </div>
@@ -239,7 +270,11 @@ export default function SearchForm() {
           </div>
         </div>
 
-        {error && <p className="animate-fade-in-up text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && (
+          <p className="animate-fade-in-up text-sm text-red-600 dark:text-red-400">
+            {error}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -254,17 +289,20 @@ export default function SearchForm() {
         <div className="animate-fade-in-up space-y-4">
           <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
             <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-              {result.leads.length} lead{result.leads.length > 1 ? "s" : ""} avec un contact trouvé{result.leads.length > 1 ? "s" : ""}
+              {result.leads.length} lead{result.leads.length > 1 ? "s" : ""}{" "}
+              avec un contact trouvé{result.leads.length > 1 ? "s" : ""}
             </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Sur {result.withoutWebsiteCount} établissement(s) sans site web dans un rayon de {radiusKm} km autour de{" "}
+              Sur {result.withoutWebsiteCount} établissement(s) sans site web
+              dans un rayon de {radiusKm} km autour de{" "}
               <strong>{result.zoneLabel}</strong>
               {result.fromCache && " (résultats en cache, < 7 jours)"}.
             </p>
             {result.mergedCount > 0 && (
               <p className="mt-1 text-xs text-sky-600 dark:text-sky-400">
-                {result.mergedCount} doublon{result.mergedCount > 1 ? "s" : ""} fusionné{result.mergedCount > 1 ? "s" : ""} avec
-                un lead existant.
+                {result.mergedCount} doublon{result.mergedCount > 1 ? "s" : ""}{" "}
+                fusionné{result.mergedCount > 1 ? "s" : ""} avec un lead
+                existant.
               </p>
             )}
 
@@ -297,8 +335,12 @@ export default function SearchForm() {
                   className="animate-fade-in-up p-3 text-sm"
                   style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
                 >
-                  <p className="font-medium text-gray-800 dark:text-gray-100">{lead.name}</p>
-                  <p className="text-gray-500 dark:text-gray-400">{lead.address}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-100">
+                    {lead.name}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {lead.address}
+                  </p>
                   <ContactLinks
                     phone={lead.phone}
                     email={lead.email}
@@ -312,7 +354,8 @@ export default function SearchForm() {
             </ul>
             {result.leads.length > 15 && (
               <p className="border-t border-gray-100 p-3 text-xs text-gray-400 dark:border-gray-800 dark:text-gray-500">
-                +{result.leads.length - 15} autres — voir la liste complète dans « Mes leads ».
+                +{result.leads.length - 15} autres — voir la liste complète dans
+                « Mes leads ».
               </p>
             )}
           </div>

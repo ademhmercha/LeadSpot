@@ -19,7 +19,10 @@ export default function LoginForm() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     setLoading(false);
     if (error) {
@@ -41,8 +44,12 @@ export default function LoginForm() {
           height={48}
           className="mx-auto h-12 w-12 rounded-xl"
         />
-        <h1 className="mt-2 text-2xl font-bold text-brand-700 dark:text-brand-400">LeadSpot</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Connectez-vous à votre compte</p>
+        <h1 className="mt-2 text-2xl font-bold text-brand-700 dark:text-brand-400">
+          LeadSpot
+        </h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Connectez-vous à votre compte
+        </p>
       </div>
 
       <form
@@ -50,7 +57,9 @@ export default function LoginForm() {
         className="space-y-4 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800"
       >
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Email
+          </label>
           <input
             type="email"
             required
@@ -60,7 +69,9 @@ export default function LoginForm() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Mot de passe</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Mot de passe
+          </label>
           <input
             type="password"
             required
@@ -70,7 +81,9 @@ export default function LoginForm() {
           />
         </div>
 
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        )}
 
         <button
           type="submit"
@@ -83,7 +96,10 @@ export default function LoginForm() {
 
       <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
         Pas encore de compte ?{" "}
-        <Link href="/signup" className="font-medium text-brand-600 hover:underline dark:text-brand-400">
+        <Link
+          href="/signup"
+          className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+        >
           Créer un compte
         </Link>
       </p>

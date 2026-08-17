@@ -13,7 +13,8 @@ function getResend(): Resend {
 // Expéditeur par défaut : la sandbox gratuite de Resend. Une fois un domaine
 // vérifié (plan gratuit toujours), définir RESEND_FROM_EMAIL pour recevoir les
 // réponses des prospects dans sa propre boîte mail.
-const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL ?? "LeadSpot <onboarding@resend.dev>";
+const FROM_ADDRESS =
+  process.env.RESEND_FROM_EMAIL ?? "LeadSpot <onboarding@resend.dev>";
 
 /**
  * Envoie un email individuel à un seul destinataire (prospection). Utilisé par
@@ -44,7 +45,7 @@ export async function sendNewLeadsAlertEmail(opts: {
       (l) =>
         `<tr><td style="padding:6px 10px;border-bottom:1px solid #eee">${l.name}</td>` +
         `<td style="padding:6px 10px;border-bottom:1px solid #eee">${l.address ?? "-"}</td>` +
-        `<td style="padding:6px 10px;border-bottom:1px solid #eee">${l.phone ?? "-"}</td></tr>`
+        `<td style="padding:6px 10px;border-bottom:1px solid #eee">${l.phone ?? "-"}</td></tr>`,
     )
     .join("");
 

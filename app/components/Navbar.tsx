@@ -33,7 +33,9 @@ export default function Navbar() {
             height={28}
             className="h-7 w-7 rounded-md"
           />
-          <span className="text-base font-bold text-brand-700 sm:text-lg dark:text-brand-400">LeadSpot</span>
+          <span className="text-base font-bold text-brand-700 sm:text-lg dark:text-brand-400">
+            LeadSpot
+          </span>
         </Link>
         <div className="flex items-center gap-0.5 sm:gap-1">
           {LINKS.map((link) => (

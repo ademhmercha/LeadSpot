@@ -14,15 +14,26 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createServiceRoleClient();
-  const { data, error } = await supabase.from("keepalive_pings").select("pinged_at").eq("id", true).maybeSingle();
+  const { data, error } = await supabase
+    .from("keepalive_pings")
+    .select("pinged_at")
+    .eq("id", true)
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  await supabase.from("keepalive_pings").update({ pinged_at: new Date().toISOString() }).eq("id", true);
+  await supabase
+    .from("keepalive_pings")
+    .update({ pinged_at: new Date().toISOString() })
+    .eq("id", true);
 
-  return NextResponse.json({ ok: true, lastPing: data?.pinged_at ?? null, pingedAt: new Date().toISOString() });
+  return NextResponse.json({
+    ok: true,
+    lastPing: data?.pinged_at ?? null,
+    pingedAt: new Date().toISOString(),
+  });
 }
 
 // Convenience for manual/browser testing; QStash always sends POST.

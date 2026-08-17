@@ -9,7 +9,7 @@ import { createHmac, timingSafeEqual } from "crypto";
  */
 const PIXEL_GIF = Buffer.from(
   "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-  "base64"
+  "base64",
 );
 
 export const TRACKING_PIXEL_CONTENT_TYPE = "image/gif";
@@ -27,7 +27,9 @@ export function signLeadToken(leadId: string): string {
 export function verifyLeadToken(leadId: string, signature: string): boolean {
   const expected = Buffer.from(signLeadToken(leadId), "utf8");
   const provided = Buffer.from(signature ?? "", "utf8");
-  return expected.length === provided.length && timingSafeEqual(expected, provided);
+  return (
+    expected.length === provided.length && timingSafeEqual(expected, provided)
+  );
 }
 
 /**

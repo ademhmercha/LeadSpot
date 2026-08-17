@@ -19,19 +19,27 @@ describe("isSocialOnlyOrMissing", () => {
   });
 
   it("détecte un lien Facebook", () => {
-    expect(isSocialOnlyOrMissing("https://facebook.com/moncommerce")).toBe(true);
+    expect(isSocialOnlyOrMissing("https://facebook.com/moncommerce")).toBe(
+      true,
+    );
   });
 
   it("détecte un lien Facebook mobile", () => {
-    expect(isSocialOnlyOrMissing("https://m.facebook.com/moncommerce")).toBe(true);
+    expect(isSocialOnlyOrMissing("https://m.facebook.com/moncommerce")).toBe(
+      true,
+    );
   });
 
   it("détecte un lien Facebook business", () => {
-    expect(isSocialOnlyOrMissing("https://business.facebook.com/moncommerce")).toBe(true);
+    expect(
+      isSocialOnlyOrMissing("https://business.facebook.com/moncommerce"),
+    ).toBe(true);
   });
 
   it("détecte un lien Instagram", () => {
-    expect(isSocialOnlyOrMissing("https://instagram.com/moncommerce")).toBe(true);
+    expect(isSocialOnlyOrMissing("https://instagram.com/moncommerce")).toBe(
+      true,
+    );
   });
 
   it("détecte un lien Facebook sans protocol", () => {
@@ -43,6 +51,8 @@ describe("isSocialOnlyOrMissing", () => {
   });
 
   it("retourne false pour un domaine personnalisé", () => {
-    expect(isSocialOnlyOrMissing("https://www.boulangerie-dupont.fr")).toBe(false);
+    expect(isSocialOnlyOrMissing("https://www.boulangerie-dupont.fr")).toBe(
+      false,
+    );
   });
 });

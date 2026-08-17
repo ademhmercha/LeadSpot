@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase-server";
 import { isSocialOnlyOrMissing, searchPlaces } from "@/lib/geoapify";
-import { buildSearchCacheKey, getCachedSearch, setCachedSearch } from "@/lib/redis";
+import {
+  buildSearchCacheKey,
+  getCachedSearch,
+  setCachedSearch,
+} from "@/lib/redis";
 import { sendNewLeadsAlertEmail } from "@/lib/resend";
 import { sendPushNotification } from "@/lib/webpush";
 import { verifyQstashSignature } from "@/lib/qstash-verify";
@@ -33,11 +37,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: zonesError.message }, { status: 500 });
   }
 
-  const results: { zoneId: string; newLeads: number; merged?: number; error?: string }[] = [];
+  const results: {
+    zoneId: string;
+    newLeads: number;
+    merged?: number;
+    error?: string;
+  }[] = [];
 
   for (const zone of (zones ?? []) as SavedZone[]) {
     try {
-      const cacheKey = buildSearchCacheKey(zone.category, zone.lat, zone.lon, zone.radius_km);
+      const cacheKey = buildSearchCacheKey(
+        zone.category,
+        zone.lat,
+        zone.lon,
+        zone.radius_km,
+      );
       let places = await getCachedSearch(cacheKey);
       if (!places) {
         places = await searchPlaces({
@@ -49,7 +63,9 @@ export async function POST(req: NextRequest) {
         await setCachedSearch(cacheKey, places);
       }
 
-      const withoutWebsite = places.filter((p) => isSocialOnlyOrMissing(p.website));
+      const withoutWebsite = places.filter((p) =>
+        isSocialOnlyOrMissing(p.website),
+      );
 
       const rows: FoundPlaceRow[] = withoutWebsite.map((p) => ({
         place_id: p.place_id,
@@ -67,7 +83,11 @@ export async function POST(req: NextRequest) {
         search_radius_km: zone.radius_km,
       }));
 
-      const { leads: insertedLeads, inserted, merged } = await storeFoundPlaces(supabase, zone.user_id, rows);
+      const {
+        leads: insertedLeads,
+        inserted,
+        merged,
+      } = await storeFoundPlaces(supabase, zone.user_id, rows);
 
       if (insertedLeads.length > 0) {
         const { data: profile } = await supabase
@@ -91,7 +111,11 @@ export async function POST(req: NextRequest) {
           .eq("user_id", zone.user_id);
 
         const expiredEndpoints: string[] = [];
-        for (const sub of (subscriptions ?? []) as { endpoint: string; p256dh: string; auth: string }[]) {
+        for (const sub of (subscriptions ?? []) as {
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+        }[]) {
           const { expired } = await sendPushNotification(sub, {
             title: `LeadSpot : ${insertedLeads.length} nouveau(x) lead(s)`,
             body: `${insertedLeads.length} nouvel(s) établissement(s) sans site web trouvé(s) à ${zone.zone_label} (${zone.category}).`,
@@ -108,11 +132,18 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      await supabase.from("saved_zones").update({ last_scanned_at: new Date().toISOString() }).eq("id", zone.id);
+      await supabase
+        .from("saved_zones")
+        .update({ last_scanned_at: new Date().toISOString() })
+        .eq("id", zone.id);
 
       results.push({ zoneId: zone.id, newLeads: inserted, merged });
     } catch (err) {
-      results.push({ zoneId: zone.id, newLeads: 0, error: (err as Error).message });
+      results.push({
+        zoneId: zone.id,
+        newLeads: 0,
+        error: (err as Error).message,
+      });
     }
   }
 

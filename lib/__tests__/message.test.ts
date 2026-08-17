@@ -4,7 +4,7 @@ import { personalizeMessage, escapeHtml } from "../message";
 describe("personalizeMessage", () => {
   it("remplace un placeholder simple", () => {
     expect(personalizeMessage("Bonjour {{name}}", { name: "Chez Marie" })).toBe(
-      "Bonjour Chez Marie"
+      "Bonjour Chez Marie",
     );
   });
 
@@ -21,7 +21,9 @@ describe("personalizeMessage", () => {
   });
 
   it("conserve les placeholders inconnus", () => {
-    expect(personalizeMessage("Bonjour {{unknown}}", {})).toBe("Bonjour {{unknown}}");
+    expect(personalizeMessage("Bonjour {{unknown}}", {})).toBe(
+      "Bonjour {{unknown}}",
+    );
   });
 
   it("remplace par une chaîne vide si la valeur est null", () => {
@@ -29,7 +31,9 @@ describe("personalizeMessage", () => {
   });
 
   it("remplace par une chaîne vide si la valeur est undefined", () => {
-    expect(personalizeMessage("Nom: {{name}}", { name: undefined })).toBe("Nom: ");
+    expect(personalizeMessage("Nom: {{name}}", { name: undefined })).toBe(
+      "Nom: ",
+    );
   });
 
   it("retourne le message inchangé s'il n'y a aucun placeholder", () => {
@@ -41,7 +45,7 @@ describe("personalizeMessage", () => {
 describe("escapeHtml", () => {
   it("échappe les caractères dangereux", () => {
     expect(escapeHtml('<script>alert("xss")</script>')).toBe(
-      "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;"
+      "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;",
     );
   });
 

@@ -8,6 +8,7 @@ export function toWhatsAppNumber(phone: string): string | null {
   const digits = phone.replace(/\D/g, "");
   if (!digits) return null;
   if (digits.startsWith("00")) return digits.slice(2);
-  if (digits.startsWith("0") && digits.length === 10) return `33${digits.slice(1)}`;
+  if (digits.startsWith("0") && digits.length === 10)
+    return `33${digits.slice(1)}`;
   return digits;
 }

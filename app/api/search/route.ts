@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase-server";
-import { geocodeZone, isSocialOnlyOrMissing, reverseGeocodeZone, searchPlaces } from "@/lib/geoapify";
-import { buildSearchCacheKey, getCachedSearch, setCachedSearch } from "@/lib/redis";
+import {
+  createServerSupabaseClient,
+  createServiceRoleClient,
+} from "@/lib/supabase-server";
+import {
+  geocodeZone,
+  isSocialOnlyOrMissing,
+  reverseGeocodeZone,
+  searchPlaces,
+} from "@/lib/geoapify";
+import {
+  buildSearchCacheKey,
+  getCachedSearch,
+  setCachedSearch,
+} from "@/lib/redis";
 import { tryConsumeSearchQuota } from "@/lib/usage";
-import { storeFoundPlaces, type FoundPlaceRow, type StoreResult } from "@/lib/leads-store";
+import {
+  storeFoundPlaces,
+  type FoundPlaceRow,
+  type StoreResult,
+} from "@/lib/leads-store";
 import type { GeoapifyPlace } from "@/lib/types";
 
 interface SearchRequestBody {
@@ -28,11 +44,21 @@ export async function POST(req: NextRequest) {
   const { category, zoneQuery, radiusKm } = body;
   let { lat, lon } = body;
 
-  if (!category || !radiusKm || (!zoneQuery && (lat === undefined || lon === undefined))) {
-    return NextResponse.json({ error: "Paramètres de recherche invalides" }, { status: 400 });
+  if (
+    !category ||
+    !radiusKm ||
+    (!zoneQuery && (lat === undefined || lon === undefined))
+  ) {
+    return NextResponse.json(
+      { error: "Paramètres de recherche invalides" },
+      { status: 400 },
+    );
   }
   if (radiusKm <= 0 || radiusKm > 50) {
-    return NextResponse.json({ error: "Le rayon doit être compris entre 1 et 50 km" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Le rayon doit être compris entre 1 et 50 km" },
+      { status: 400 },
+    );
   }
 
   // 1. Enforce monthly quota BEFORE spending an API call.
@@ -43,7 +69,7 @@ export async function POST(req: NextRequest) {
         error: `Quota mensuel atteint (${usage.limit} recherches/mois). Réessayez le mois prochain.`,
         usage,
       },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -52,7 +78,10 @@ export async function POST(req: NextRequest) {
   if (zoneQuery && (lat === undefined || lon === undefined)) {
     const geocoded = await geocodeZone(zoneQuery);
     if (!geocoded) {
-      return NextResponse.json({ error: "Zone géographique introuvable" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Zone géographique introuvable" },
+        { status: 404 },
+      );
     }
     lat = geocoded.lat;
     lon = geocoded.lon;
@@ -60,7 +89,9 @@ export async function POST(req: NextRequest) {
   } else if (lat !== undefined && lon !== undefined && !zoneQuery) {
     // "Locate me" search: reverse-geocode the GPS coordinates into a
     // readable label instead of showing raw "lat,lon" to the user.
-    zoneLabel = (await reverseGeocodeZone(lat, lon)) ?? `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
+    zoneLabel =
+      (await reverseGeocodeZone(lat, lon)) ??
+      `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
   }
 
   // 3. Cache lookup (7 days) to save Geoapify free-tier quota (3000 req/day).
@@ -104,7 +135,10 @@ export async function POST(req: NextRequest) {
   try {
     storeResult = await storeFoundPlaces(admin, user.id, rows);
   } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({

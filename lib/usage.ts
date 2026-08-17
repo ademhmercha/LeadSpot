@@ -27,7 +27,12 @@ export async function getUsage(userId: string): Promise<UsageInfo> {
     .maybeSingle();
 
   const searchCount = data?.search_count ?? 0;
-  return { period, searchCount, limit, remaining: Math.max(0, limit - searchCount) };
+  return {
+    period,
+    searchCount,
+    limit,
+    remaining: Math.max(0, limit - searchCount),
+  };
 }
 
 /**
@@ -36,7 +41,7 @@ export async function getUsage(userId: string): Promise<UsageInfo> {
  * whether the user was still under quota *before* this call.
  */
 export async function tryConsumeSearchQuota(
-  userId: string
+  userId: string,
 ): Promise<{ allowed: boolean; usage: UsageInfo }> {
   const supabase = createServiceRoleClient();
   const period = currentPeriod();
@@ -51,7 +56,10 @@ export async function tryConsumeSearchQuota(
 
   const currentCount = existing?.search_count ?? 0;
   if (currentCount >= limit) {
-    return { allowed: false, usage: { period, searchCount: currentCount, limit, remaining: 0 } };
+    return {
+      allowed: false,
+      usage: { period, searchCount: currentCount, limit, remaining: 0 },
+    };
   }
 
   const { data: newCount, error } = await supabase.rpc("increment_usage", {
@@ -62,6 +70,11 @@ export async function tryConsumeSearchQuota(
 
   return {
     allowed: true,
-    usage: { period, searchCount: newCount as number, limit, remaining: Math.max(0, limit - (newCount as number)) },
+    usage: {
+      period,
+      searchCount: newCount as number,
+      limit,
+      remaining: Math.max(0, limit - (newCount as number)),
+    },
   };
 }

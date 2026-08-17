@@ -7,7 +7,11 @@ import Navbar from "@/app/components/Navbar";
 import StatusBadge from "@/app/components/StatusBadge";
 import ContactLinks from "@/app/components/ContactLinks";
 import type { Audit, Lead, LeadEvent, LeadStatus } from "@/lib/types";
-import { LEAD_EVENT_LABELS, LEAD_STATUSES, LEAD_STATUS_LABELS } from "@/lib/types";
+import {
+  LEAD_EVENT_LABELS,
+  LEAD_STATUSES,
+  LEAD_STATUS_LABELS,
+} from "@/lib/types";
 
 interface LeadDetailClientProps {
   lead: Lead;
@@ -19,23 +23,36 @@ const inputClass =
   "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100";
 
 function formatDate(iso: string): string {
-  return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(iso));
 }
 
 function eventDetail(event: LeadEvent): string | null {
   if (event.type === "sent") {
     const channel = event.metadata?.channel;
-    return channel === "whatsapp" ? "Message WhatsApp ouvert/envoyé manuellement" : "Email de prospection envoyé";
+    return channel === "whatsapp"
+      ? "Message WhatsApp ouvert/envoyé manuellement"
+      : "Email de prospection envoyé";
   }
   if (event.type === "status_changed") {
-    const from = LEAD_STATUS_LABELS[event.metadata?.from as LeadStatus] ?? event.metadata?.from;
-    const to = LEAD_STATUS_LABELS[event.metadata?.to as LeadStatus] ?? event.metadata?.to;
+    const from =
+      LEAD_STATUS_LABELS[event.metadata?.from as LeadStatus] ??
+      event.metadata?.from;
+    const to =
+      LEAD_STATUS_LABELS[event.metadata?.to as LeadStatus] ??
+      event.metadata?.to;
     return `${from} → ${to}`;
   }
   return null;
 }
 
-export default function LeadDetailClient({ lead: initialLead, events: initialEvents, audit: initialAudit }: LeadDetailClientProps) {
+export default function LeadDetailClient({
+  lead: initialLead,
+  events: initialEvents,
+  audit: initialAudit,
+}: LeadDetailClientProps) {
   const router = useRouter();
   const [lead, setLead] = useState(initialLead);
   const [events, setEvents] = useState(initialEvents);
@@ -45,7 +62,9 @@ export default function LeadDetailClient({ lead: initialLead, events: initialEve
   const [creatingAudit, setCreatingAudit] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  async function updateLead(patch: Partial<Pick<Lead, "status" | "notes" | "phone" | "email">>) {
+  async function updateLead(
+    patch: Partial<Pick<Lead, "status" | "notes" | "phone" | "email">>,
+  ) {
     setSaving(true);
     try {
       const res = await fetch(`/api/leads/${lead.id}`, {
@@ -127,16 +146,24 @@ export default function LeadDetailClient({ lead: initialLead, events: initialEve
     <div className="min-h-screen">
       <Navbar />
       <main className="mx-auto max-w-4xl px-4 py-6">
-        <Link href="/dashboard" className="text-sm font-medium text-brand-600 transition-colors hover:underline dark:text-brand-400">
+        <Link
+          href="/dashboard"
+          className="text-sm font-medium text-brand-600 transition-colors hover:underline dark:text-brand-400"
+        >
           ← Retour à mes leads
         </Link>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">{lead.name}</h1>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              {lead.name}
+            </h1>
             <StatusBadge status={lead.status} />
             {lead.email_opened_at && (
-              <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300" title={`Ouvert le ${formatDate(lead.email_opened_at)}`}>
+              <span
+                className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300"
+                title={`Ouvert le ${formatDate(lead.email_opened_at)}`}
+              >
                 Email ouvert
               </span>
             )}
@@ -149,7 +176,9 @@ export default function LeadDetailClient({ lead: initialLead, events: initialEve
             Supprimer
           </button>
         </div>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{lead.address}</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {lead.address}
+        </p>
         <ContactLinks
           phone={lead.phone}
           email={lead.email}
@@ -162,14 +191,20 @@ export default function LeadDetailClient({ lead: initialLead, events: initialEve
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="space-y-4">
             <section className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-              <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Infos</h2>
+              <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                Infos
+              </h2>
               <div className="mt-3 space-y-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Statut</label>
+                  <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Statut
+                  </label>
                   <select
                     value={lead.status}
                     disabled={saving}
-                    onChange={(e) => updateLead({ status: e.target.value as LeadStatus })}
+                    onChange={(e) =>
+                      updateLead({ status: e.target.value as LeadStatus })
+                    }
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                   >
                     {LEAD_STATUSES.map((s) => (
@@ -180,37 +215,46 @@ export default function LeadDetailClient({ lead: initialLead, events: initialEve
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Téléphone</label>
+                  <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Téléphone
+                  </label>
                   <input
                     type="tel"
                     defaultValue={lead.phone ?? ""}
                     placeholder="ex : 04 78 00 00 00"
                     onBlur={(e) => {
-                      if (e.target.value.trim() !== (lead.phone ?? "")) updateLead({ phone: e.target.value });
+                      if (e.target.value.trim() !== (lead.phone ?? ""))
+                        updateLead({ phone: e.target.value });
                     }}
                     className={inputClass}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Email</label>
+                  <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Email
+                  </label>
                   <input
                     type="email"
                     defaultValue={lead.email ?? ""}
                     placeholder="ex : contact@..."
                     onBlur={(e) => {
-                      if (e.target.value.trim() !== (lead.email ?? "")) updateLead({ email: e.target.value });
+                      if (e.target.value.trim() !== (lead.email ?? ""))
+                        updateLead({ email: e.target.value });
                     }}
                     className={inputClass}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Notes</label>
+                  <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Notes
+                  </label>
                   <textarea
                     defaultValue={lead.notes ?? ""}
                     placeholder="Notes libres..."
                     rows={4}
                     onBlur={(e) => {
-                      if (e.target.value !== (lead.notes ?? "")) updateLead({ notes: e.target.value });
+                      if (e.target.value !== (lead.notes ?? ""))
+                        updateLead({ notes: e.target.value });
                     }}
                     className={inputClass}
                   />
@@ -219,7 +263,9 @@ export default function LeadDetailClient({ lead: initialLead, events: initialEve
             </section>
 
             <section className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-              <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Lien d&apos;audit partageable</h2>
+              <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                Lien d&apos;audit partageable
+              </h2>
               {audit ? (
                 <div className="mt-3 space-y-2">
                   <input
@@ -264,9 +310,13 @@ export default function LeadDetailClient({ lead: initialLead, events: initialEve
           </div>
 
           <section className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-            <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Historique</h2>
+            <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+              Historique
+            </h2>
             {events.length === 0 ? (
-              <p className="mt-3 text-sm text-gray-400 dark:text-gray-500">Aucun événement pour le moment.</p>
+              <p className="mt-3 text-sm text-gray-400 dark:text-gray-500">
+                Aucun événement pour le moment.
+              </p>
             ) : (
               <ul className="mt-3 space-y-3">
                 {events.map((event) => (
@@ -276,10 +326,15 @@ export default function LeadDetailClient({ lead: initialLead, events: initialEve
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         {LEAD_EVENT_LABELS[event.type]}
                         {eventDetail(event) && (
-                          <span className="font-normal text-gray-500 dark:text-gray-400"> — {eventDetail(event)}</span>
+                          <span className="font-normal text-gray-500 dark:text-gray-400">
+                            {" "}
+                            — {eventDetail(event)}
+                          </span>
                         )}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(event.created_at)}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        {formatDate(event.created_at)}
+                      </p>
                     </div>
                   </li>
                 ))}
