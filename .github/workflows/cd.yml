@@ -1,0 +1,53 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches: [main]
+
+
+jobs:
+  deploy:
+    name: build and deploy on minikube
+    runs-on: self-hosted
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: start minikube
+        run: minikube start
+      - name: point docker to minikube
+        run: |
+          minikube -p minikube docker-env --shell powershell | Out-File -Encoding utf8 docker-env.ps1
+          . .\docker-env.ps1
+      - name: build docker image
+        run: docker build -t leadspot:latest .
+      - name: Create kubernetes secrets 
+        run: |
+          kubectl delete secret leadspot-env --ignore-not-found
+          kubectl create secret generic leadspot-env `
+            --from-literal=NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" `
+            --from-literal=NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" `
+            --from-literal=SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" `
+            --from-literal=GEOAPIFY_API_KEY="${{ secrets.GEOAPIFY_API_KEY }}" `
+            --from-literal=UPSTASH_REDIS_REST_URL="${{ secrets.UPSTASH_REDIS_REST_URL }}" `
+            --from-literal=UPSTASH_REDIS_REST_TOKEN="${{ secrets.UPSTASH_REDIS_REST_TOKEN }}" `
+            --from-literal=QSTASH_TOKEN="${{ secrets.QSTASH_TOKEN }}" `
+            --from-literal=RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}" `
+            --from-literal=NEXT_PUBLIC_MAP_TILES_API_KEY="${{ secrets.NEXT_PUBLIC_MAP_TILES_API_KEY }}" `
+            --from-literal=NEXT_PUBLIC_VAPID_PUBLIC_KEY="${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}" `
+            --from-literal=VAPID_PRIVATE_KEY="${{ secrets.VAPID_PRIVATE_KEY }}" `
+            --from-literal=FREE_TIER_MONTHLY_SEARCH_LIMIT="10" `
+            --from-literal=NEXT_PUBLIC_APP_URL="http://localhost:30080"
+      - name: Deploy to minikube
+        run: |
+          helm upgrade --install leadspot ./leadspot-chart `
+            --set image.tag=latest `
+            --set image.pullPolicy=Never `
+            --wait --timeout 300s
+            
+      - name: verify deployement 
+        run: |
+          kubectl rollout status deployment/leadspot-leadspot-chart --timeout=60s
+          kubectl get pods -l app.kubernetes.io/instance=leadspot 
