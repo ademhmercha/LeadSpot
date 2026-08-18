@@ -53,9 +53,8 @@ jobs:
           kubectl get pods -l app.kubernetes.io/instance=leadspot
       - name: smoke test 
         run: |
-          kubectl port-forward svc/leadspot-leadspot-chart 3000:3000 &
+          Start-Process -NoNewWindow -FilePath "kubectl" -ArgumentList "port-forward svc/leadspot-leadspot-chart 3000:3000"
           Start-Sleep -Seconds 15
-        
           $response = Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing
           if ($response.StatusCode -ne 200) {
             Write-Error "Smoke test failed with status $($response.StatusCode)"
