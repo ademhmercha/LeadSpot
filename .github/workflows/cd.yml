@@ -50,7 +50,28 @@ jobs:
       - name: verify deployement 
         run: |
           kubectl rollout status deployment/leadspot-leadspot-chart --timeout=60s
-          kubectl get pods -l app.kubernetes.io/instance=leadspot 
+          kubectl get pods -l app.kubernetes.io/instance=leadspot
+      - name: smoke test 
+        run: |
+          kubectl port-forward svc/leadspot-leadspot-chart 3000:3000 &
+          Start-Sleep -Seconds 10
+          $response = Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing
+          if ($response.StatusCode -ne 200) {
+            Write-Error "Smoke test failed with status $($response.StatusCode)"
+            exit 1
+          }
+          Write-Host "Smoke test passed - Status: $($response.StatusCode)"
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          Write-Host "Deployment failed. Rolling back..."
+          helm rollback leadspot 0
+          kubectl rollout status deployment/leadspot-leadspot-chart --timeout=60s
+          kubectl get pods -l app.kubernetes.io/instance=leadspot
+          
+          
+
       - name: Job Summary
         if: always()
         run: |
@@ -64,5 +85,7 @@ jobs:
           | **Triggered by** | `${{ github.actor }}` |
           | **Status** | `${{ job.status }}` |
           | **Time** | $(Get-Date -Format "yyyy-MM-dd HH:mm:ss") |
+          | **Cluster** | $(kubectl cluster-info | Select-String -Pattern 'is running at' | Out-String) |
+          | **Pods** | $(kubectl get pods -l app.kubernetes.io/instance=leadspot --no-headers | Measure-Object -Line | Select-Object -ExpandProperty Lines) |
           "@
           echo $summary >> $env:GITHUB_STEP_SUMMARY
