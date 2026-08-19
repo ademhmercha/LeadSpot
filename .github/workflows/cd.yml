@@ -45,6 +45,7 @@ jobs:
       - name: enable ingress addon
         run: minikube addons enable ingress
       - name: add hosts entry
+        continue-on-error: true
         run: |
           $hosts = Get-Content "C:\Windows\System32\drivers\etc\hosts"
           if ($hosts -notcontains "127.0.0.1  leadspot.local") {
