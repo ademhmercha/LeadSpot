@@ -1,4 +1,4 @@
-name: CD
+name: "CD — ${{ github.sha }}"
 
 on:
   workflow_run:
@@ -40,12 +40,25 @@ jobs:
             --from-literal=VAPID_PRIVATE_KEY="${{ secrets.VAPID_PRIVATE_KEY }}" `
             --from-literal=FREE_TIER_MONTHLY_SEARCH_LIMIT="10" `
             --from-literal=NEXT_PUBLIC_APP_URL="http://localhost:30080"
+      - name: enable ingress addon
+        run: minikube addons enable ingress
+      - name: add hosts entry
+        run: |
+          $hosts = Get-Content "C:\Windows\System32\drivers\etc\hosts"
+          if ($hosts -notcontains "127.0.0.1  leadspot.local") {
+            Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n127.0.0.1  leadspot.local"
+          }
       - name: Deploy to minikube
         run: |
           helm upgrade --install leadspot ./leadspot-chart `
             --set image.tag=latest `
             --set image.pullPolicy=Never `
+            --set ingress.enabled=true `
             --wait --timeout 300s
+      - name: start minikube tunnel
+        run: Start-Process -NoNewWindow -FilePath "minikube" -ArgumentList "tunnel"
+      - name: wait for ingress
+        run: Start-Sleep -Seconds 10
             
       - name: verify deployement 
         run: |
@@ -75,6 +88,9 @@ jobs:
       - name: Job Summary
         if: always()
         run: |
+          $ingressHost = kubectl get ingress leadspot-leadspot-chart -o jsonpath='{.spec.rules[0].host}' 2>$null
+          $ingressUrl = if ($ingressHost) { "http://$ingressHost" } else { "N/A (port-forward: localhost:30080)" }
+          $hpa = kubectl get hpa -l app.kubernetes.io/instance=leadspot --no-headers 2>$null
           $summary = @"
           ## Deploy Report
           | | |
@@ -85,6 +101,8 @@ jobs:
           | **Triggered by** | `${{ github.actor }}` |
           | **Status** | `${{ job.status }}` |
           | **Time** | $(Get-Date -Format "yyyy-MM-dd HH:mm:ss") |
+          | **App URL** | $ingressUrl |
+          | **HPA** | $(if ($hpa) { $hpa } else { "Non configuré" }) |
           | **Cluster** | $(kubectl cluster-info | Select-String -Pattern 'is running at' | Out-String) |
           | **Pods** | $(kubectl get pods -l app.kubernetes.io/instance=leadspot --no-headers | Measure-Object -Line | Select-Object -ExpandProperty Lines) |
           "@

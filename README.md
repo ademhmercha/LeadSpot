@@ -13,6 +13,8 @@ Outil de prospection pour freelances/agences web : trouve les établissements lo
 - [Stack technique](#stack-technique)
 - [Fonctionnement](#fonctionnement)
 - [Setup local](#setup-local)
+- [Docker & Kubernetes](#docker--kubernetes)
+- [CI/CD](#cicd)
 - [Déploiement](#déploiement)
 - [Limites des free tiers (à vérifier périodiquement)](#limites-des-free-tiers-à-vérifier-périodiquement)
 - [Points de vigilance](#points-de-vigilance)
@@ -30,6 +32,9 @@ Outil de prospection pour freelances/agences web : trouve les établissements lo
 | Emails d'alerte | [Resend](https://resend.com/pricing) | Oui |
 | Tuiles de carte | [MapTiler](https://www.maptiler.com/cloud/pricing/) (ou Stadia Maps) | Oui, avec clé |
 | Hébergement | [Vercel Hobby](https://vercel.com/pricing) | Oui, **usage non-commercial** |
+| Conteneurisation | Docker (multi-stage build) | — (auto-hébergé) |
+| Orchestration locale | Minikube + Helm | — (local) |
+| CD Pipeline | GitHub Actions (self-hosted runner) | — (local) |
 
 ## Fonctionnement
 
@@ -94,6 +99,104 @@ npm run dev
 ```
 
 
+## Docker & Kubernetes
+
+### Dockerfile
+
+Le projet utilise un **build multi-stage** (`Dockerfile`) :
+
+- **Stage builder** : installe toutes les dépendances (dev + prod), compile l'app Next.js.
+- **Stage production** : installe uniquement les dépendances prod, copie le build `.next/` et le dossier `public/`. Image finale minimale.
+
+```bash
+# Build
+docker build -t leadspot:latest .
+
+# Run
+docker run -p 3000:3000 --env-file .env.local leadspot:latest
+```
+
+### Helm Chart
+
+Le dossier `leadspot-chart/` contient le Helm chart pour déployer sur Kubernetes :
+
+- **Deployment** : 1 replica, probes liveness/readiness, secrets injectés via `envFrom`
+- **Service** : NodePort (port 30080 sur la machine hôte)
+- **HPA** : Horizontal Pod Autoscaler (configurable)
+- **Ressources** : limits (500m CPU, 512Mi RAM) et requests (100m CPU, 256Mi RAM)
+
+```bash
+# Déployer sur Minikube
+helm install leadspot ./leadspot-chart
+
+# Mettre à jour
+helm upgrade --install leadspot ./leadspot-chart
+
+# Supprimer
+helm uninstall leadspot
+```
+
+### Minikube (Kubernetes local)
+
+```bash
+minikube start
+# Pointer Docker vers Minikube
+& minikube -p minikube docker-env --shell powershell | Invoke-Expression
+# Build l'image dans le daemon Minikube
+docker build -t leadspot:latest .
+# Déployer
+helm install leadspot ./leadspot-chart
+# Accéder à l'app
+minikube service leadspot-leadspot-chart --url
+```
+
+## CI/CD
+
+### CI (`.github/workflows/ci.yml`)
+
+Lancé à chaque **push** ou **pull request** sur `main`, sur `ubuntu-latest` :
+
+| # | Étape | Description |
+|---|---|---|
+| 1 | `actions/checkout@v4` | Clone du repo |
+| 2 | `actions/setup-node@v4` | Node.js 20 + cache npm |
+| 3 | `npm ci` | Installation des dépendances |
+| 4 | `npm audit --audit-level=high` | Audit des vulnérabilités (non bloquant) |
+| 5 | `npm run lint` | Linting (ESLint via Next.js) |
+| 6 | `npm run format:check` | Vérification du formatage (Prettier) |
+| 7 | `npm run typecheck` | Vérification des types TypeScript |
+| 8 | `npm run test` | Tests unitaires/intégration |
+| 9 | `npm run build` | Build de production (avec les secrets injectés comme env vars : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_MAP_TILES_API_KEY`) |
+
+### CD (`.github/workflows/cd.yml`)
+
+Déclenché **automatiquement** quand le CI réussit sur `main` (`workflow_run`). Exécuté sur un **self-hosted runner** (machine locale Windows) :
+
+| # | Étape | Description |
+|---|---|---|
+| 1 | `actions/checkout@v4` | Clone du code |
+| 2 | `minikube start` | Démarrage du cluster Kubernetes local |
+| 3 | `minikube docker-env` | Pointe Docker vers le daemon Minikube |
+| 4 | `docker build` | Build de l'image `leadspot:latest` dans le daemon Minikube |
+| 5 | `kubectl create secret` | Crée le secret `leadspot-env` avec les GitHub Actions Secrets |
+| 6 | `helm upgrade --install` | Déploiement/mise à jour sur Minikube |
+| 7 | `kubectl rollout status` | Vérifie que le rollout se termine |
+| 8 | **Smoke test** | Port-forward + `Invoke-WebRequest` pour vérifier le status 200 |
+| 9 | **Rollback** (`if: failure()`) | `helm rollback` automatique si le déploiement échoue |
+| 10 | **Job Summary** (`if: always()`) | Rapport Markdown dans l'onglet Actions (repo, branch, commit, status, cluster, pods) |
+
+### Setup du runner self-hosted
+
+1. Aller dans **Settings → Actions → Runners** du repo GitHub
+2. Créer un nouveau self-hosted runner (Windows)
+3. Installer dans un dossier dédié (ex: `actions-runner-leadspot`)
+4. Lancer le runner : `.\run.cmd`
+5. Le runner reste ouvert et écoute les jobs
+
+### Secrets GitHub requis
+
+Ajouter dans **Settings → Secrets → Actions** les mêmes variables que `.env.local` (voir [Setup local](#3-configurer-les-variables-denvironnement)).
+
 ## Déploiement
 
 Voir [`terraform/README.md`](terraform/README.md) pour le déploiement infra-as-code complet (Vercel + Upstash Redis, sur 3 environnements). En résumé :
@@ -151,6 +254,8 @@ Voir [`terraform/README.md`](terraform/README.md) pour :
 ├── lib/                      # Clients Supabase/Geoapify/Redis/Resend/QStash, quota, types
 ├── supabase/schema.sql       # Schéma DB complet (tables, RLS, fonctions, triggers)
 ├── scripts/setup-qstash.ts   # Programmation des cron QStash
+├── leadspot-chart/           # Helm chart Kubernetes (deployment, service, HPA)
+├── Dockerfile                # Build multi-stage pour la conteneurisation
 ├── terraform/                # Infra as code (voir terraform/README.md)
-└── .github/workflows/        # CI/CD (Terraform plan/apply)
+└── .github/workflows/        # CI (ci.yml) + CD (cd.yml) + Terraform (terraform.yml)
 ```
