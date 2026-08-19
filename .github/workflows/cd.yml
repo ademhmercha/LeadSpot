@@ -1,4 +1,4 @@
-name: "CD — ${{ github.sha }}"
+name: CD
 
 on:
   workflow_run:
@@ -6,12 +6,14 @@ on:
     types:
       - completed
     branches: [main]
+  workflow_dispatch:
 
 
 jobs:
   deploy:
     name: build and deploy on minikube
     runs-on: self-hosted
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: checkout code
         uses: actions/checkout@v4
