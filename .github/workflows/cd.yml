@@ -44,13 +44,10 @@ jobs:
             --from-literal=NEXT_PUBLIC_APP_URL="http://localhost:30080"
       - name: enable ingress addon
         run: minikube addons enable ingress
-      - name: add hosts entry
-        continue-on-error: true
+      - name: fix ingress webhook certificates
         run: |
-          $hosts = Get-Content "C:\Windows\System32\drivers\etc\hosts"
-          if ($hosts -notcontains "127.0.0.1  leadspot.local") {
-            Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n127.0.0.1  leadspot.local"
-          }
+          kubectl delete validatingwebhookconfiguration ingress-nginx-admission --ignore-not-found
+          kubectl delete mutatingwebhookconfiguration ingress-nginx-admission --ignore-not-found
       - name: Deploy to minikube
         run: |
           helm upgrade --install leadspot ./leadspot-chart `
@@ -60,7 +57,7 @@ jobs:
             --wait --timeout 300s
       - name: start minikube tunnel
         run: Start-Process -NoNewWindow -FilePath "minikube" -ArgumentList "tunnel"
-      - name: wait for ingress
+      - name: wait for tunnel
         run: Start-Sleep -Seconds 10
             
       - name: verify deployement 
