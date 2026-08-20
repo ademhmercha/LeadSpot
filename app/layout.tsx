@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import PwaRegister from "./components/PwaRegister";
 
@@ -56,6 +57,7 @@ export default function RootLayout({
         </Script>
         {children}
         <PwaRegister />
+        <Analytics />
       </body>
     </html>
   );
